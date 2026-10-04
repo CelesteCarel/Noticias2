@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal de Noticias • Información y Divulgación</title>
+    <meta
+      name="description"
+      content="Portal de noticias con sistema de control de acceso basado en roles (RBAC dinámico), tokens JWT seguros y registro de auditoría."
+    />
+
+    <!-- Fuentes Tipográficas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Iconos FontAwesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <!-- Estilos Principales -->
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+
+  <body>
+    <!-- Encabezado Principal / Masthead Periodístico -->
+    <header class="masthead-header">
+      <div class="container masthead-container">
+        <div class="masthead-brand">
+          <a href="#" class="brand-link" id="brandLogo">
+            <span class="brand-sub"
+              >ESCUELA DE TECNOLOGIAS DIGITALES APLICADAS, CAMPUS I</span
+            >
+            <h1 class="brand-title">PORTAL DE NOTICIAS</h1>
+            <span class="brand-tagline">Gaceta Universitaria</span>
+          </a>
+        </div>
+
+        <!-- Barra de Acciones y Sesión -->
+        <div class="header-actions">
+          <!-- Buscador -->
+          <div class="header-search">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Buscar noticias, autores o temas..."
+              autocomplete="off"
+            />
+            <button
+              class="search-clear-btn"
+              id="searchClearBtn"
+              style="display: none"
+              title="Limpiar búsqueda"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Botones de Navegación de Vistas -->
+          <button
+            class="btn btn-outline"
+            id="btnNavPortal"
+            style="display: none"
+          >
+            <i class="fa-solid fa-newspaper"></i> <span>Ver Noticias</span>
+          </button>
+
+          <button
+            class="btn btn-primary"
+            id="btnNavNewArticle"
+            style="display: none"
+          >
+            <i class="fa-solid fa-pen-nib"></i> <span>Nueva Noticia</span>
+          </button>
+
+          <button
+            class="btn btn-secondary"
+            id="btnNavAdmin"
+            style="display: none"
+          >
+            <i class="fa-solid fa-gear"></i> <span>Administración</span>
+          </button>
+
+          <!-- Bloque de Autenticación -->
+          <div id="authContainer">
+            <div id="guestButtons" class="auth-group">
+              <button class="btn btn-ghost" id="btnLoginOpen">Ingresar</button>
+              <button class="btn btn-primary btn-sm" id="btnRegisterOpen">
+                Registrarse
+              </button>
+            </div>
+
+            <div id="userProfileBadge" class="user-badge" style="display: none">
+              <div class="user-avatar" id="userAvatar">U</div>
+              <div class="user-info">
+                <span class="user-name" id="userNameDisplay">Usuario</span>
+                <span class="user-role-tag" id="userRoleBadge">Lector</span>
+              </div>
+              <button
+                class="btn-profile-action"
+                id="btnOpenChangePass"
+                title="Cambiar Contraseña"
+              >
+                <i class="fa-solid fa-key"></i>
+              </button>
+              <button
+                class="btn-profile-action"
+                id="btnLogout"
+                title="Cerrar Sesión"
+              >
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Barra de Secciones / Categorías -->
+    <nav class="categories-bar" id="categoriesBar">
+      <div class="container categories-container" id="categoriesList">
+        <button class="category-pill active" data-cat="Todas">
+          Todas las Secciones
+        </button>
+        <button class="category-pill" data-cat="Tecnología">Tecnología</button>
+        <button class="category-pill" data-cat="Ciencia">Ciencia</button>
+        <button class="category-pill" data-cat="Economía">Economía</button>
+        <button class="category-pill" data-cat="Deportes">Deportes</button>
+        <button class="category-pill" data-cat="Cultura">Cultura</button>
+      </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content">
+      <!-- VISTA 1: PORTAL DE NOTICIAS -->
+      <section id="viewPortal" class="active-view">
+        <div class="container">
+          <!-- Noticia Principal (Destacada) -->
+          <article class="hero-article" id="featuredHero">
+            <div class="hero-image-wrap">
+              <div class="hero-image" id="heroImage"></div>
+            </div>
+            <div class="hero-details">
+              <div class="hero-meta-top">
+                <span class="badge badge-category" id="heroCategory"
+                  >Tecnología</span
+                >
+                <span class="hero-date" id="heroDate"
+                  ><i class="fa-regular fa-clock"></i> Reciente</span
+                >
+              </div>
+              <h2 class="hero-title" id="heroTitle">
+                Cargando artículo principal...
+              </h2>
+              <p class="hero-excerpt" id="heroExcerpt">
+                Obteniendo la información desde el servidor...
+              </p>
+              <div class="hero-footer">
+                <span class="hero-author" id="heroAuthor"
+                  ><i class="fa-solid fa-user-pen"></i> Redacción</span
+                >
+                <button class="btn btn-primary" id="heroReadBtn">
+                  Leer Artículo Completo <i class="fa-solid fa-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Encabezado de Sección -->
+          <div class="section-title-bar">
+            <div>
+              <h3 class="section-heading" id="sectionTitle">Edición del Día</h3>
+              <p class="section-subtext" id="sectionSubtitle">
+                Artículos y notas informativas de la comunidad académica.
+              </p>
+            </div>
+            <span class="articles-count-badge" id="newsCountBadge"
+              >0 artículos</span
+            >
+          </div>
+
+          <!-- Grid de Artículos -->
+          <div class="news-grid" id="newsGrid">
+            <!-- Renderizado dinámico -->
+          </div>
+
+          <!-- Estado Vacío -->
+          <div class="empty-state" id="emptyState" style="display: none">
+            <div class="empty-icon">
+              <i class="fa-regular fa-newspaper"></i>
+            </div>
+            <h3>No se encontraron publicaciones</h3>
+            <p>
+              No hay artículos disponibles para el criterio o categoría
+              seleccionada.
+            </p>
+            <button class="btn btn-outline" id="btnResetFilters">
+              Ver Todas las Noticias
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 2: PANEL DE ADMINISTRACIÓN Y CONTROL RBAC -->
+      <section id="viewAdmin" class="view-section" style="display: none">
+        <div class="container">
+          <div class="admin-top-bar">
+            <div>
+              <span class="admin-badge"
+                ><i class="fa-solid fa-lock"></i> Panel Administrativo</span
+              >
+              <h2 class="admin-title">Gestión de Acceso y Auditoría</h2>
+              <p class="admin-desc">
+                Control de usuarios, administración dinámica de roles y registro
+                de eventos.
+              </p>
+            </div>
+            <div class="admin-stats-summary" id="adminQuickStats">
+              <!-- Estadísticas -->
+            </div>
+          </div>
+
+          <!-- Pestañas del Panel -->
+          <div class="admin-nav-tabs">
+            <button
+              class="admin-tab active"
+              data-tab="tabUsers"
+              id="tabBtnUsers"
+            >
+              <i class="fa-solid fa-users"></i> Directorio de Usuarios
+            </button>
+            <button class="admin-tab" data-tab="tabRoles" id="tabBtnRoles">
+              <i class="fa-solid fa-key"></i> Roles y Permisos Dinámicos
+            </button>
+            <button class="admin-tab" data-tab="tabAudit" id="tabBtnAudit">
+              <i class="fa-solid fa-clipboard-check"></i> Bitácora de Auditoría
+            </button>
+          </div>
+
+          <!-- TAB 1: GESTIÓN DE USUARIOS -->
+          <div class="admin-tab-pane active" id="tabUsers">
+            <div class="card-panel">
+              <div class="card-panel-header">
+                <div>
+                  <h4>Usuarios del Sistema</h4>
+                  <p>
+                    Asigna o revoca roles en tiempo real según los
+                    requerimientos del sistema.
+                  </p>
+                </div>
+                <div class="panel-tools">
+                  <input
+                    type="text"
+                    id="userSearchInput"
+                    class="form-input form-input-sm"
+                    placeholder="Buscar por nombre o correo..."
+                  />
+                </div>
+              </div>
+              <div class="table-container">
+                <table class="data-table" id="usersTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nombre</th>
+                      <th>Correo Electrónico</th>
+                      <th>Rol Actual</th>
+                      <th>Artículos</th>
+                      <th>Fecha de Registro</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody">
+                    <!-- Filas de usuarios -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: ROLES Y PERMISOS DINÁMICOS -->
+          <div class="admin-tab-pane" id="tabRoles" style="display: none">
+            <div class="card-panel">
+              <div class="card-panel-header">
+                <div>
+                  <h4>Matriz de Roles y Permisos (RBAC Dinámico)</h4>
+                  <p>
+                    Configura los permisos relacionales asignados a cada rol.
+                    Los cambios se persisten de inmediato en la base de datos.
+                  </p>
+                </div>
+                <div class="panel-tools">
+                  <button class="btn btn-primary btn-sm" id="btnCreateRoleOpen">
+                    <i class="fa-solid fa-plus"></i> Nuevo Rol
+                  </button>
+                </div>
+              </div>
+
+              <div class="roles-grid" id="rolesMatrixContainer">
+                <!-- Matriz de permisos -->
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: BITÁCORA DE AUDITORÍA -->
+          <div class="admin-tab-pane" id="tabAudit" style="display: none">
+            <div class="card-panel">
+              <div class="card-panel-header">
+                <div>
+                  <h4>Registro Inmutable de Auditoría</h4>
+                  <p>
+                    Trazabilidad cronológica de accesos, intentos fallidos,
+                    cambios de privilegios y operaciones CRUD.
+                  </p>
+                </div>
+                <div class="panel-tools audit-tools">
+                  <select
+                    id="auditActionFilter"
+                    class="form-input form-input-sm"
+                  >
+                    <option value="Todas">Todas las Acciones</option>
+                    <option value="Inicio de Sesión">Inicios de Sesión</option>
+                    <option value="Fuerza">Bloqueos / Intentos Fallidos</option>
+                    <option value="Noticia">Operaciones de Noticias</option>
+                    <option value="Rol">Cambios de Roles / Permisos</option>
+                    <option value="Contraseña">
+                      Operaciones de Contraseña
+                    </option>
+                  </select>
+                  <input
+                    type="text"
+                    id="auditSearchInput"
+                    class="form-input form-input-sm"
+                    placeholder="Buscar en eventos..."
+                  />
+                  <button
+                    class="btn btn-outline btn-sm"
+                    id="btnRefreshAudit"
+                    title="Actualizar bitácora"
+                  >
+                    <i class="fa-solid fa-rotate-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table class="data-table" id="auditTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Fecha y Hora</th>
+                      <th>Usuario Responsable</th>
+                      <th>Rol</th>
+                      <th>Acción</th>
+                      <th>Detalles</th>
+                      <th>Dirección IP</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditTableBody">
+                    <!-- Filas de eventos -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- =========================================================
+       MODALES DE LA APLICACIÓN
+       ========================================================= -->
+
+    <!-- MODAL: LECTURA COMPLETA DE ARTÍCULO -->
+    <div class="modal-backdrop" id="modalArticleReader">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <button class="modal-close" id="closeReaderModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="reader-header">
+            <img id="readerImg" src="" alt="Noticia" class="reader-image" />
+            <div class="reader-meta">
+              <span class="badge badge-category" id="readerCategory"
+                >Categoría</span
+              >
+              <span class="reader-date" id="readerDate"
+                ><i class="fa-regular fa-calendar"></i> Fecha</span
+              >
+              <span class="reader-author" id="readerAuthor"
+                ><i class="fa-solid fa-user-pen"></i> Autor</span
+              >
+            </div>
+          </div>
+          <div class="modal-body reader-body">
+            <h2 class="reader-title" id="readerTitle">Título de la Noticia</h2>
+            <div class="reader-text" id="readerContent"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" id="closeReaderModalFooter">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: REDACTAR / EDITAR NOTICIA -->
+    <div class="modal-backdrop" id="modalArticleEditor">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <button class="modal-close" id="closeEditorModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3 id="editorModalTitle">
+              <i class="fa-solid fa-pen-nib"></i> Redactar Noticia
+            </h3>
+            <p class="modal-subtitle">
+              Ingresa la información requerida para publicar o actualizar el
+              artículo.
+            </p>
+          </div>
+          <form id="articleForm" class="modal-body">
+            <input type="hidden" id="editArticleId" />
+
+            <div class="form-field">
+              <label for="articleTitle"
+                >Título <span class="required">*</span></label
+              >
+              <input
+                type="text"
+                id="articleTitle"
+                class="form-input"
+                required
+                placeholder="Ej: Nuevas investigaciones en ciencia y tecnología..."
+              />
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label for="articleCategory"
+                  >Sección / Categoría <span class="required">*</span></label
+                >
+                <select id="articleCategory" class="form-input" required>
+                  <option value="Tecnología">Tecnología</option>
+                  <option value="Ciencia">Ciencia</option>
+                  <option value="Economía">Economía</option>
+                  <option value="Deportes">Deportes</option>
+                  <option value="Cultura">Cultura</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="articlePresetImg">Imagen Sugerida</label>
+                <select id="articlePresetImg" class="form-input">
+                  <option value="">Personalizada (URL)</option>
+                  <option
+                    value="https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80"
+                  >
+                    Laboratorio / Universidad
+                  </option>
+                  <option
+                    value="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80"
+                  >
+                    Ciencia & Espacio
+                  </option>
+                  <option
+                    value="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80"
+                  >
+                    Ciberseguridad & Redes
+                  </option>
+                  <option
+                    value="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80"
+                  >
+                    Robótica & Innovación
+                  </option>
+                  <option
+                    value="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80"
+                  >
+                    Comunidad Universitaria
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="articleImgUrl">Imagen Principal</label>
+              <input
+                type="url"
+                id="articleImgUrl"
+                class="form-input"
+                placeholder="https://images.unsplash.com/..."
+              />
+              <p class="form-hint">
+                Pega una URL o, en lugar de ella, sube una imagen desde tu
+                equipo.
+              </p>
+
+              <div class="upload-area" id="articleUploadArea">
+                <input
+                  type="file"
+                  id="articleImgFile"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                />
+                <label class="upload-label" for="articleImgFile">
+                  <i class="fa-solid fa-image"></i>
+                  <span>Seleccionar imagen</span>
+                </label>
+                <div class="upload-preview" id="articleImgPreview" hidden>
+                  <img
+                    id="articleImgPreviewImg"
+                    src=""
+                    alt="Vista previa de la imagen seleccionada"
+                  />
+                  <div class="upload-meta">
+                    <span class="upload-name" id="articleImgPreviewName"></span>
+                    <span class="upload-size" id="articleImgPreviewSize"></span>
+                  </div>
+                  <button
+                    type="button"
+                    class="upload-clear"
+                    id="btnClearArticleImg"
+                    aria-label="Quitar la imagen seleccionada"
+                  >
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+                <p class="upload-hint">JPG, PNG, WEBP o GIF. Máximo 5 MB.</p>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="articleContent"
+                >Cuerpo del Artículo <span class="required">*</span></label
+              >
+              <textarea
+                id="articleContent"
+                class="form-input"
+                rows="7"
+                required
+                placeholder="Escribe el contenido completo del artículo aquí..."
+              ></textarea>
+            </div>
+
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-outline"
+                id="btnCancelArticle"
+              >
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary" id="btnSaveArticle">
+                Publicar Noticia
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: INICIAR SESIÓN -->
+    <div class="modal-backdrop" id="modalLogin">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeLoginModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3>
+              <i class="fa-solid fa-arrow-right-to-bracket"></i> Iniciar Sesión
+            </h3>
+            <p class="modal-subtitle">
+              Accede a tu cuenta institucional o de lector.
+            </p>
+          </div>
+          <form id="loginForm" class="modal-body">
+            <div class="form-field">
+              <label for="loginEmail">Correo Institucional / Personal</label>
+              <input
+                type="email"
+                id="loginEmail"
+                class="form-input"
+                required
+                placeholder="tu@correo.com"
+              />
+            </div>
+            <div class="form-field">
+              <div class="label-row">
+                <label for="loginPassword">Contraseña</label>
+                <a href="#" class="link-small" id="btnForgotPassOpen"
+                  >¿Olvidaste tu contraseña?</a
+                >
+              </div>
+              <input
+                type="password"
+                id="loginPassword"
+                class="form-input"
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            <button
+              type="submit"
+              class="btn btn-primary btn-block"
+              id="btnLoginSubmit"
+            >
+              Ingresar al Sistema
+            </button>
+          </form>
+          <div class="modal-footer-text">
+            <p>
+              ¿No tienes una cuenta?
+              <a href="#" id="linkGoToRegister" class="text-link"
+                >Regístrate aquí</a
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: REGISTRO DE USUARIO -->
+    <div class="modal-backdrop" id="modalRegister">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeRegisterModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-user-plus"></i> Registro de Usuario</h3>
+            <p class="modal-subtitle">
+              Crea tu cuenta como Lector en el portal.
+            </p>
+          </div>
+          <form id="registerForm" class="modal-body">
+            <div class="form-field">
+              <label for="regName"
+                >Nombre Completo <span class="required">*</span></label
+              >
+              <input
+                type="text"
+                id="regName"
+                class="form-input"
+                required
+                placeholder="Ej: Carlos Mendoza"
+              />
+            </div>
+            <div class="form-field">
+              <label for="regEmail"
+                >Correo Electrónico <span class="required">*</span></label
+              >
+              <input
+                type="email"
+                id="regEmail"
+                class="form-input"
+                required
+                placeholder="carlos@ejemplo.com"
+              />
+            </div>
+            <div class="form-field">
+              <label for="regPassword"
+                >Contraseña (Mínimo 6 caracteres)
+                <span class="required">*</span></label
+              >
+              <input
+                type="password"
+                id="regPassword"
+                class="form-input"
+                minlength="6"
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            <button
+              type="submit"
+              class="btn btn-primary btn-block"
+              id="btnRegisterSubmit"
+            >
+              Crear Cuenta
+            </button>
+          </form>
+          <div class="modal-footer-text">
+            <p>
+              ¿Ya tienes cuenta?
+              <a href="#" id="linkGoToLogin" class="text-link">Inicia sesión</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: RECUPERACIÓN DE CONTRASEÑA (ENVÍO REAL POR CORREO) -->
+    <div class="modal-backdrop" id="modalForgotPass">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeForgotModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3>
+              <i class="fa-solid fa-envelope-open-text"></i> Recuperación de
+              Contraseña
+            </h3>
+            <p class="modal-subtitle" id="forgotSubtitle">
+              Ingresa tu correo para recibir un código de verificación.
+            </p>
+          </div>
+          <form id="forgotPassForm" class="modal-body">
+            <div class="form-field" id="forgotEmailField">
+              <label for="forgotEmail">Correo Electrónico Registrado</label>
+              <input
+                type="email"
+                id="forgotEmail"
+                class="form-input"
+                required
+                placeholder="tu@correo.com"
+              />
+            </div>
+
+            <div id="resetFieldsGroup" style="display: none">
+              <div class="alert-info" id="emailSentAlert">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span
+                  >Te enviamos un código de 6 dígitos a tu correo. Revisa tu
+                  bandeja de entrada o spam.</span
+                >
+              </div>
+              <div class="form-field">
+                <label for="resetCode">Código de 6 Dígitos</label>
+                <input
+                  type="text"
+                  id="resetCode"
+                  class="form-input text-center font-mono"
+                  maxlength="6"
+                  placeholder="123456"
+                />
+              </div>
+              <div class="form-field">
+                <label for="resetNewPass">Nueva Contraseña</label>
+                <input
+                  type="password"
+                  id="resetNewPass"
+                  class="form-input"
+                  minlength="6"
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary btn-block"
+              id="btnForgotSubmit"
+            >
+              Enviar Código por Correo
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CAMBIO DE CONTRASEÑA (USUARIO AUTENTICADO) -->
+    <div class="modal-backdrop" id="modalChangePass">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeChangePassModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-key"></i> Cambiar Contraseña</h3>
+            <p class="modal-subtitle">
+              Actualiza tu clave de acceso de forma segura.
+            </p>
+          </div>
+          <form id="changePassForm" class="modal-body">
+            <div class="form-field">
+              <label for="currentPassword"
+                >Contraseña Actual <span class="required">*</span></label
+              >
+              <input
+                type="password"
+                id="currentPassword"
+                class="form-input"
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            <div class="form-field">
+              <label for="newPassword"
+                >Nueva Contraseña <span class="required">*</span></label
+              >
+              <input
+                type="password"
+                id="newPassword"
+                class="form-input"
+                minlength="6"
+                required
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+            <div class="form-field">
+              <label for="confirmNewPassword"
+                >Confirmar Nueva Contraseña
+                <span class="required">*</span></label
+              >
+              <input
+                type="password"
+                id="confirmNewPassword"
+                class="form-input"
+                minlength="6"
+                required
+                placeholder="Repite la nueva contraseña"
+              />
+            </div>
+            <button
+              type="submit"
+              class="btn btn-primary btn-block"
+              id="btnChangePassSubmit"
+            >
+              Actualizar Contraseña
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CREAR NUEVO ROL -->
+    <div class="modal-backdrop" id="modalCreateRole">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeRoleModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-shield"></i> Crear Rol</h3>
+            <p class="modal-subtitle">
+              Define un nuevo rol con permisos personalizados.
+            </p>
+          </div>
+          <form id="createRoleForm" class="modal-body">
+            <div class="form-field">
+              <label for="roleName"
+                >Nombre del Rol <span class="required">*</span></label
+              >
+              <input
+                type="text"
+                id="roleName"
+                class="form-input"
+                required
+                placeholder="Ej: Revisor, Moderador"
+              />
+            </div>
+            <div class="form-field">
+              <label for="roleDesc">Descripción</label>
+              <input
+                type="text"
+                id="roleDesc"
+                class="form-input"
+                placeholder="Alcance y responsabilidades"
+              />
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" id="btnCancelRole">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary" id="btnSaveRole">
+                Guardar Rol
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenedor de Toasts -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Pie de Página -->
+    <footer class="site-footer">
+      <div class="container footer-content">
+        <div class="footer-brand-block">
+          <strong>Portal de Noticias • Universidad Autónoma de Chiapas</strong>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/news.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "portal-de-noticias",
+  "version": "1.0.0",
+  "description": "Portal de Noticias con RBAC Dinámico y Auditoría",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "dev": "node --no-warnings --watch server.js",
+    "certs": "node --no-warnings scripts/generate-certs.js",
+    "test": "node --no-warnings test/api.test.js && node --no-warnings test/config.test.js",
+    "test:api": "node --no-warnings test/api.test.js",
+    "test:config": "node --no-warnings test/config.test.js"
+  },
+  "keywords": [
+    "noticias",
+    "rbac",
+    "auditoria",
+    "express",
+    "sqlite",
+    "jwt"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.0.13"
+  }
+}
