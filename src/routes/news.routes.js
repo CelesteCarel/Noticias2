@@ -14,7 +14,94 @@ const {
 } = require('../middleware/sanitizer');
 const { subirImagen, eliminarImagenSinUso } = require('../middleware/upload');
 
-router.use(sanitizeInput);
+const DEFAULT_TEASER = {
+  modo: 'personalizado',
+  id_noticia: null,
+  badge: 'Escándalo Universitario',
+  categoria: 'Escándalo Universitario',
+  date: 'Hace 3 horas',
+  author: 'Redacción Gaceta',
+  title: 'EXCLUSIVA: Alumno del Campus I es descubierto bajo efectos de sustancias durante el examen final — seguridad lo retiró del aula ante el asombro de compañeros y maestros',
+  image: '/img/escandalo-drogas.jpg',
+  visibleText: 'Lo que prometía ser un examen final rutinario de Bases de Datos en el Departamento de Tecnologías Digitales se convirtió esta mañana en uno de los episodios más insólitos en la historia reciente del campus. Alrededor de las 9:40 de la mañana, el alumno Cristian Alejandro Vargas Torres, de séptimo semestre, comenzó a mostrar un comportamiento errático dentro del aula: hablaba solo, se reía sin motivo aparente y en un momento intentó responder el examen con un plumón rojo que sacó de su mochila. La maestra titular, Dra. Patricia Leal, optó por detener la evaluación y llamar al personal de seguridad del plantel.',
+  blurredText: [
+    'Según testigos presenciales, Vargas Torres habría llegado al examen ya en un estado alterado desde el momento en que cruzó la puerta. "Se veía raro desde que entró, pero nadie dijo nada porque pensamos que era de los nervios", declaró una compañera de clase que pidió guardar el anonimato. Las cámaras del pasillo exterior captaron al estudiante consumiendo una sustancia no identificada en el baño del segundo piso aproximadamente 20 minutos antes del inicio del examen.',
+    'El personal de seguridad llegó al aula en menos de cinco minutos y, tras una breve conversación, Vargas Torres fue retirado del salón entre risas propias y el silencio atónito del resto del grupo. La Dra. Leal optó por suspender la evaluación para todos los presentes y reprogramarla para la siguiente semana. Mientras tanto, el alumno fue trasladado a la enfermería del plantel, donde se confirmó que presentaba signos evidentes de intoxicación.',
+    'Fuentes internas del Departamento de Orientación Educativa señalaron que el caso ya fue turnado al Comité Disciplinario y que podría derivar en una suspensión temporal o, dependiendo de los resultados de los análisis clínicos solicitados, en una baja definitiva. El coordinador de la carrera emitió un breve comunicado interno pidiendo "discreción y respeto hacia el alumno involucrado", aunque para ese momento el video grabado por un compañero desde la última fila ya circulaba en todos los grupos de WhatsApp del campus.'
+  ],
+  porcentaje_visible: 30
+};
+
+/**
+ * Obtener la configuración actual de la noticia teaser de portada (Pública).
+ * Extrae la noticia marcada como portada (o el escándalo más reciente) directamente
+ * de la base de datos real con su división de censura y regla de última hora (<= 1 hora).
+ */
+router.get('/portada-teaser', (req, res) => {
+  try {
+    // Buscar la noticia designada como portada o la más reciente
+    let art = db.prepare(`
+      SELECT n.id, n.titulo, n.contenido, n.categoria, n.imagen_url,
+             n.fecha_creacion, n.es_portada, n.porcentaje_censura,
+             u.nombre AS autor_nombre
+      FROM noticias n
+      JOIN usuarios u ON n.id_autor = u.id
+      ORDER BY n.es_portada DESC, n.fecha_creacion DESC, n.id DESC
+      LIMIT 1
+    `).get();
+
+    if (!art) {
+      return res.json({
+        id: null,
+        title: 'Sin noticias disponibles',
+        image: '/img/escandalo-drogas.jpg',
+        categoria: 'Escándalo Universitario',
+        author: 'Redacción Gaceta',
+        date: 'Reciente',
+        visibleText: 'Aún no se han publicado noticias en el portal.',
+        blurredText: [],
+        porcentaje_censura: 30,
+        is_ultima_hora: false
+      });
+    }
+
+    const percent = Math.min(Math.max(Number(art.porcentaje_censura) || 30, 10), 90);
+    const content = art.contenido || '';
+    const cutIndex = Math.floor((content.length * percent) / 100);
+
+    let naturalCut = content.indexOf(' ', cutIndex);
+    if (naturalCut === -1 || naturalCut > cutIndex + 60) naturalCut = cutIndex;
+
+    const visibleText = content.substring(0, naturalCut).trim() + '...';
+    const remaining = content.substring(naturalCut).trim();
+    const blurredText = remaining.split('\n\n').filter(p => p.trim().length > 0);
+    if (blurredText.length === 0 && remaining.length > 0) {
+      blurredText.push(remaining);
+    }
+
+    // Regla de ÚLTIMA HORA: Solo si fue publicada hace menos de 1 hora (3,600,000 ms)
+    const diffMs = Date.now() - new Date(art.fecha_creacion).getTime();
+    const is_ultima_hora = diffMs >= 0 && diffMs <= 3600000;
+
+    res.json({
+      id: art.id,
+      title: art.titulo,
+      image: art.imagen_url || '/img/escandalo-drogas.jpg',
+      categoria: art.categoria,
+      badge: art.categoria,
+      author: art.autor_nombre || 'Redacción Gaceta',
+      date: art.fecha_creacion,
+      fullContent: art.contenido,
+      visibleText,
+      blurredText,
+      porcentaje_censura: percent,
+      is_ultima_hora
+    });
+  } catch (error) {
+    console.error('Error al obtener teaser de portada:', error.message);
+    res.status(500).json({ error: 'Error al consultar portada' });
+  }
+});
 
 /**
  * Lectura de noticias.
@@ -30,6 +117,7 @@ router.get('/', authenticateToken, requirePermission('noticias.leer'), (req, res
   try {
     let query = `
       SELECT n.id, n.titulo, n.contenido, n.categoria, n.imagen_url, n.id_autor,
+             n.es_portada, n.porcentaje_censura,
              n.fecha_creacion, n.fecha_actualizacion,
              u.nombre AS autor_nombre, u.email AS autor_email, r.nombre_rol AS autor_rol
       FROM noticias n
@@ -50,7 +138,7 @@ router.get('/', authenticateToken, requirePermission('noticias.leer'), (req, res
       params.push(term, term);
     }
 
-    query += ' ORDER BY n.fecha_creacion DESC, n.id DESC LIMIT ?';
+    query += ' ORDER BY n.es_portada DESC, n.fecha_creacion DESC, n.id DESC LIMIT ?';
     params.push(limit);
 
     const rows = db.prepare(query).all(...params);
@@ -168,13 +256,20 @@ router.post('/',
         ? imagen_url
         : 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=1200&q=80');
 
+    const esPortada = (req.body.es_portada === '1' || req.body.es_portada === 1 || req.body.es_portada === true || req.body.es_portada === 'true') ? 1 : 0;
+    const porcentajeCensura = Math.min(Math.max(parseInt(req.body.porcentaje_censura, 10) || 30, 10), 90);
+
+    if (esPortada === 1) {
+      db.prepare('UPDATE noticias SET es_portada = 0').run();
+    }
+
     const insert = db.prepare(`
-      INSERT INTO noticias (titulo, contenido, categoria, imagen_url, id_autor, fecha_creacion)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO noticias (titulo, contenido, categoria, imagen_url, id_autor, es_portada, porcentaje_censura, fecha_creacion)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const now = new Date().toISOString();
-    const result = insert.run(titulo, contenido, categoria, defaultImage, req.user.id, now);
+    const result = insert.run(titulo, contenido, categoria, defaultImage, req.user.id, esPortada, porcentajeCensura, now);
     const newId = Number(result.lastInsertRowid);
 
     logAudit(req.user.id, `Publicación de Noticia #${newId}`, `Título: "${titulo}" | Categoría: ${categoria}`, ip);
@@ -235,11 +330,18 @@ router.put('/:id',
     // Una imagen subida gana sobre la URL: el archivo es lo que el autor eligió.
     const finalImage = req.imagenSubida || imagen_url || existing.imagen_url;
 
+    const esPortada = (req.body.es_portada === '1' || req.body.es_portada === 1 || req.body.es_portada === true || req.body.es_portada === 'true') ? 1 : 0;
+    const porcentajeCensura = Math.min(Math.max(parseInt(req.body.porcentaje_censura, 10) || existing.porcentaje_censura || 30, 10), 90);
+
+    if (esPortada === 1) {
+      db.prepare('UPDATE noticias SET es_portada = 0 WHERE id <> ?').run(id);
+    }
+
     db.prepare(`
       UPDATE noticias
-      SET titulo = ?, contenido = ?, categoria = ?, imagen_url = ?, fecha_actualizacion = ?
+      SET titulo = ?, contenido = ?, categoria = ?, imagen_url = ?, es_portada = ?, porcentaje_censura = ?, fecha_actualizacion = ?
       WHERE id = ?
-    `).run(titulo, contenido, categoria, finalImage, now, id);
+    `).run(titulo, contenido, categoria, finalImage, esPortada, porcentajeCensura, now, id);
 
     // La imagen anterior solo se borra si era una subida nuestra y dejó de usarse:
     // una URL externa no es un archivo nuestro y se conserva intacta.

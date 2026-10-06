@@ -347,4 +347,92 @@ router.get('/auditoria', requirePermission('auditoria.ver'), (req, res) => {
   }
 });
 
+/**
+ * Gestión de Noticia Teaser de Portada para Invitados
+ */
+router.get('/portada-teaser', requirePermission('noticias.editar'), (req, res) => {
+  try {
+    const row = db.prepare('SELECT valor FROM configuracion_portal WHERE clave = ?').get('guest_teaser');
+    const articles = db.prepare(`
+      SELECT n.id, n.titulo, n.categoria, n.fecha_creacion, n.imagen_url, n.contenido,
+             u.nombre AS autor_nombre
+      FROM noticias n
+      JOIN usuarios u ON n.id_autor = u.id
+      ORDER BY n.fecha_creacion DESC, n.id DESC
+    `).all();
+
+    const config = row ? JSON.parse(row.valor) : null;
+    res.json({
+      config,
+      articles
+    });
+  } catch (error) {
+    console.error('Error al obtener configuración de teaser:', error.message);
+    res.status(500).json({ error: 'Error al consultar la configuración de portada' });
+  }
+});
+
+router.put('/portada-teaser', requirePermission('noticias.editar'), (req, res) => {
+  const ip = getClientIp(req);
+  try {
+    const {
+      modo = 'personalizado',
+      id_noticia = null,
+      badge = 'Escándalo Universitario',
+      categoria = 'Escándalo Universitario',
+      date = 'Reciente',
+      author = 'Redacción Gaceta',
+      title = '',
+      image = '',
+      visibleText = '',
+      blurredText = [],
+      porcentaje_visible = 30,
+      custom_override_text = false
+    } = req.body;
+
+    if (!title || title.trim().length === 0) {
+      return res.status(400).json({ error: 'El título de la noticia es obligatorio' });
+    }
+
+    const cleanBlurred = Array.isArray(blurredText) 
+      ? blurredText.map(t => String(t).trim()).filter(Boolean)
+      : (typeof blurredText === 'string' ? blurredText.split('\n\n').filter(Boolean) : []);
+
+    const configToSave = {
+      modo,
+      id_noticia: id_noticia ? Number(id_noticia) : null,
+      badge: String(badge).slice(0, 100),
+      categoria: String(categoria).slice(0, 100),
+      date: String(date).slice(0, 80),
+      author: String(author).slice(0, 120),
+      title: String(title).slice(0, 300),
+      image: String(image || '/img/escandalo-drogas.jpg').slice(0, 2048),
+      visibleText: String(visibleText || '').slice(0, 5000),
+      blurredText: cleanBlurred,
+      porcentaje_visible: Math.min(Math.max(Number(porcentaje_visible) || 30, 10), 90),
+      custom_override_text: Boolean(custom_override_text)
+    };
+
+    db.prepare(`
+      INSERT INTO configuracion_portal (clave, valor, fecha_actualizacion)
+      VALUES ('guest_teaser', ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(clave) DO UPDATE SET
+        valor = excluded.valor,
+        fecha_actualizacion = CURRENT_TIMESTAMP
+    `).run(JSON.stringify(configToSave));
+
+    logAudit(
+      req.user.id,
+      'Configuración de Portada',
+      `Modificación de la noticia teaser de portada: "${configToSave.title.substring(0, 50)}..."`,
+      ip
+    );
+
+    res.json({ success: true, message: 'Configuración de portada actualizada', teaser: configToSave });
+  } catch (error) {
+    console.error('Error al guardar teaser de portada:', error.message);
+    res.status(500).json({ error: 'Error al actualizar la configuración de portada' });
+  }
+});
+
 module.exports = router;

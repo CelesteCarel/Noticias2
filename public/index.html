@@ -128,6 +128,9 @@
         <button class="category-pill active" data-cat="Todas">
           Todas las Secciones
         </button>
+        <button class="category-pill" data-cat="Escándalo Universitario">
+          Escándalo Universitario
+        </button>
         <button class="category-pill" data-cat="Tecnología">Tecnología</button>
         <button class="category-pill" data-cat="Ciencia">Ciencia</button>
         <button class="category-pill" data-cat="Economía">Economía</button>
@@ -351,6 +354,8 @@
 
               <div class="table-container">
                 <table class="data-table" id="auditTable">
+              <div class="table-container">
+                <table class="data-table" id="auditTable">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -411,9 +416,9 @@
       </div>
     </div>
 
-    <!-- MODAL: REDACTAR / EDITAR NOTICIA -->
+    <!-- MODAL: REDACTAR / EDITAR NOTICIA CON VISTA PREVIA Y CONTROL DE CENSURA -->
     <div class="modal-backdrop" id="modalArticleEditor">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <button class="modal-close" id="closeEditorModal">
             <i class="fa-solid fa-xmark"></i>
@@ -423,144 +428,154 @@
               <i class="fa-solid fa-pen-nib"></i> Redactar Noticia
             </h3>
             <p class="modal-subtitle">
-              Ingresa la información requerida para publicar o actualizar el
-              artículo.
+              Configura el contenido, categoría, imagen y el nivel de censura (blur) para la vista previa de invitados.
             </p>
           </div>
-          <form id="articleForm" class="modal-body">
-            <input type="hidden" id="editArticleId" />
+          
+          <div class="modal-body editor-modal-layout">
+            <!-- Columna Izquierda: Formulario -->
+            <form id="articleForm" class="editor-form-pane">
+              <input type="hidden" id="editArticleId" />
 
-            <div class="form-field">
-              <label for="articleTitle"
-                >Título <span class="required">*</span></label
-              >
-              <input
-                type="text"
-                id="articleTitle"
-                class="form-input"
-                required
-                placeholder="Ej: Nuevas investigaciones en ciencia y tecnología..."
-              />
-            </div>
-
-            <div class="form-grid-2">
               <div class="form-field">
-                <label for="articleCategory"
-                  >Sección / Categoría <span class="required">*</span></label
-                >
-                <select id="articleCategory" class="form-input" required>
-                  <option value="Tecnología">Tecnología</option>
-                  <option value="Ciencia">Ciencia</option>
-                  <option value="Economía">Economía</option>
-                  <option value="Deportes">Deportes</option>
-                  <option value="Cultura">Cultura</option>
-                </select>
-              </div>
-              <div class="form-field">
-                <label for="articlePresetImg">Imagen Sugerida</label>
-                <select id="articlePresetImg" class="form-input">
-                  <option value="">Personalizada (URL)</option>
-                  <option
-                    value="https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80"
-                  >
-                    Laboratorio / Universidad
-                  </option>
-                  <option
-                    value="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80"
-                  >
-                    Ciencia & Espacio
-                  </option>
-                  <option
-                    value="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80"
-                  >
-                    Ciberseguridad & Redes
-                  </option>
-                  <option
-                    value="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80"
-                  >
-                    Robótica & Innovación
-                  </option>
-                  <option
-                    value="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80"
-                  >
-                    Comunidad Universitaria
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-field">
-              <label for="articleImgUrl">Imagen Principal</label>
-              <input
-                type="url"
-                id="articleImgUrl"
-                class="form-input"
-                placeholder="https://images.unsplash.com/..."
-              />
-              <p class="form-hint">
-                Pega una URL o, en lugar de ella, sube una imagen desde tu
-                equipo.
-              </p>
-
-              <div class="upload-area" id="articleUploadArea">
+                <label for="articleTitle">Título / Titular <span class="required">*</span></label>
                 <input
-                  type="file"
-                  id="articleImgFile"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  type="text"
+                  id="articleTitle"
+                  class="form-input"
+                  required
+                  placeholder="Ej: EXCLUSIVA: Alumno es descubierto bajo efectos de sustancias..."
                 />
-                <label class="upload-label" for="articleImgFile">
-                  <i class="fa-solid fa-image"></i>
-                  <span>Seleccionar imagen</span>
-                </label>
-                <div class="upload-preview" id="articleImgPreview" hidden>
-                  <img
-                    id="articleImgPreviewImg"
-                    src=""
-                    alt="Vista previa de la imagen seleccionada"
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-field">
+                  <label for="articleCategory">Sección / Categoría <span class="required">*</span></label>
+                  <select id="articleCategory" class="form-input" required>
+                    <option value="Escándalo Universitario">Escándalo Universitario</option>
+                    <option value="Tecnología">Tecnología</option>
+                    <option value="Ciencia">Ciencia</option>
+                    <option value="Economía">Economía</option>
+                    <option value="Deportes">Deportes</option>
+                    <option value="Cultura">Cultura</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="articlePresetImg">Imagen Sugerida</label>
+                  <select id="articlePresetImg" class="form-input">
+                    <option value="">Personalizada (URL)</option>
+                    <option value="/img/escandalo-drogas.jpg">Foto Escándalo / Drogas</option>
+                    <option value="https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80">Laboratorio / Universidad</option>
+                    <option value="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80">Ciencia & Espacio</option>
+                    <option value="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80">Ciberseguridad & Redes</option>
+                    <option value="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80">Robótica & Innovación</option>
+                    <option value="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80">Comunidad Universitaria</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="articleImgUrl">URL de la Imagen</label>
+                <input
+                  type="text"
+                  id="articleImgUrl"
+                  class="form-input"
+                  placeholder="/img/escandalo-drogas.jpg o https://images.unsplash.com/..."
+                />
+                <div class="upload-area" id="articleUploadArea">
+                  <input
+                    type="file"
+                    id="articleImgFile"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                   />
-                  <div class="upload-meta">
-                    <span class="upload-name" id="articleImgPreviewName"></span>
-                    <span class="upload-size" id="articleImgPreviewSize"></span>
+                  <label class="upload-label" for="articleImgFile">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Elegir o arrastrar imagen desde tu computadora</span>
+                  </label>
+                  <p class="upload-hint" id="articleUploadHint">JPG, PNG, WEBP o GIF. Máximo 5 MB.</p>
+                  <div class="upload-preview" id="articleImgPreview" hidden>
+                    <img id="articleImgPreviewImg" src="" alt="Vista previa de la imagen seleccionada" />
+                    <div class="upload-meta">
+                      <span class="upload-name" id="articleImgPreviewName"></span>
+                      <span class="upload-size" id="articleImgPreviewSize"></span>
+                    </div>
+                    <button type="button" class="upload-clear" id="btnClearArticleImg" aria-label="Quitar la imagen seleccionada" title="Quitar imagen">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    class="upload-clear"
-                    id="btnClearArticleImg"
-                    aria-label="Quitar la imagen seleccionada"
-                  >
-                    <i class="fa-solid fa-xmark"></i>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="articleContent">Cuerpo Completo del Artículo <span class="required">*</span></label>
+                <textarea
+                  id="articleContent"
+                  class="form-input"
+                  rows="7"
+                  required
+                  placeholder="Escribe el contenido completo de la noticia aquí..."
+                ></textarea>
+              </div>
+
+              <!-- OPCIONES DE PORTADA Y CENSURA -->
+              <div class="card-panel-inner censorship-control-box">
+                <div class="form-field checkbox-field" id="portadaCheckboxField">
+                  <label class="checkbox-label" for="articleIsPortada">
+                    <input type="checkbox" id="articleIsPortada" />
+                    <div>
+                      <strong><i class="fa-solid fa-thumbtack"></i> Fijar como Noticia Principal</strong>
+                      <p class="form-hint" style="margin: 2px 0 0;">Esta noticia aparecerá en grande al inicio del portal para todos los usuarios. También será la que vean los visitantes sin sesión con el desenfoque configurado.</p>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="censorship-header">
+                  <div>
+                    <h5><i class="fa-solid fa-eye-slash"></i> Nivel de Censura para Invitados (Desenfoque / Blur)</h5>
+                    <p>Gradúa qué porcentaje del texto permanece visible antes del corte borroso.</p>
+                  </div>
+                  <span class="blur-level-badge" id="articleBlurPercentBadge">30% Visible</span>
+                </div>
+
+                <div class="slider-wrapper">
+                  <input type="range" id="articleBlurSlider" min="10" max="90" step="5" value="30" class="range-slider" />
+                  <div class="slider-labels">
+                    <span>10% (Corte temprano)</span>
+                    <span>50% (Medio)</span>
+                    <span>90% (Corte tardío)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-footer" style="padding-top: 1rem;">
+                <button type="button" class="btn btn-outline" id="btnCancelArticle">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" id="btnSaveArticle">
+                  Guardar Noticia
+                </button>
+              </div>
+            </form>
+
+            <!-- Columna Derecha: Vista Previa en Vivo -->
+            <div class="editor-preview-pane">
+              <div class="preview-header">
+                <h5><i class="fa-solid fa-laptop-code"></i> Vista Previa en Vivo</h5>
+                <div class="preview-toggle-tabs">
+                  <button class="preview-tab-btn active" id="btnModalPreviewGuest" type="button">
+                    <i class="fa-solid fa-lock"></i> Como Invitado (Con Blur)
+                  </button>
+                  <button class="preview-tab-btn" id="btnModalPreviewAuth" type="button">
+                    <i class="fa-solid fa-unlock"></i> Con Sesión (Completa)
                   </button>
                 </div>
-                <p class="upload-hint">JPG, PNG, WEBP o GIF. Máximo 5 MB.</p>
+              </div>
+
+              <div class="preview-stage" id="articleModalLivePreview">
+                <!-- Renderizado dinámico en tiempo real -->
               </div>
             </div>
-
-            <div class="form-field">
-              <label for="articleContent"
-                >Cuerpo del Artículo <span class="required">*</span></label
-              >
-              <textarea
-                id="articleContent"
-                class="form-input"
-                rows="7"
-                required
-                placeholder="Escribe el contenido completo del artículo aquí..."
-              ></textarea>
-            </div>
-
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-outline"
-                id="btnCancelArticle"
-              >
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn-primary" id="btnSaveArticle">
-                Publicar Noticia
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS noticias (
     categoria TEXT NOT NULL,
     imagen_url TEXT,
     id_autor INTEGER NOT NULL,
+    es_portada INTEGER DEFAULT 0,
+    porcentaje_censura INTEGER DEFAULT 30,
     fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion DATETIME,
     FOREIGN KEY (id_autor) REFERENCES usuarios(id) ON DELETE CASCADE
@@ -98,8 +100,9 @@ BEGIN
     SELECT RAISE(ABORT, 'Operación denegada: Los registros de auditoría son inmutables por política de seguridad');
 END;
 
-CREATE TRIGGER IF NOT EXISTS trg_auditoria_no_delete
-BEFORE DELETE ON auditoria
-BEGIN
-    SELECT RAISE(ABORT, 'Operación denegada: Los registros de auditoría no pueden eliminarse');
-END;
+-- 8. Tabla de Configuración General del Portal (Teaser de portada, ajustes)
+CREATE TABLE IF NOT EXISTS configuracion_portal (
+    clave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL,
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+);

@@ -43,12 +43,43 @@ function migrateColumns() {
     db.exec('ALTER TABLE usuarios ADD COLUMN codigo_expira DATETIME;');
   }
 
-  // Normaliza los correos a minúsculas para que el registro y el inicio de sesión
-  // sean insensibles a mayúsculas (evita cuentas duplicadas por capitalización).
+  // Asegurar columnas en la tabla de noticias
+  const notColumns = db.prepare('PRAGMA table_info(noticias)').all().map(c => c.name);
+  if (!notColumns.includes('es_portada')) {
+    db.exec('ALTER TABLE noticias ADD COLUMN es_portada INTEGER DEFAULT 0;');
+  }
+  if (!notColumns.includes('porcentaje_censura')) {
+    db.exec('ALTER TABLE noticias ADD COLUMN porcentaje_censura INTEGER DEFAULT 30;');
+  }
+
+  // Asegurar tabla de configuración general del portal
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS configuracion_portal (
+      clave TEXT PRIMARY KEY,
+      valor TEXT NOT NULL,
+      fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Asegurar que la noticia de escándalo universitario esté en la base de datos como noticia real
   try {
-    db.exec('UPDATE usuarios SET email = lower(trim(email)) WHERE email <> lower(trim(email));');
-  } catch (error) {
-    console.warn('No se pudieron normalizar los correos existentes:', error.message);
+    const scandal = db.prepare("SELECT id FROM noticias WHERE categoria = 'Escándalo Universitario' OR titulo LIKE '%sustancias%'").get();
+    if (!scandal) {
+      const admin = db.prepare("SELECT id FROM usuarios WHERE email = 'admin@portalnoticias.com'").get();
+      db.prepare(`
+        INSERT INTO noticias (titulo, contenido, categoria, imagen_url, id_autor, es_portada, porcentaje_censura, fecha_creacion)
+        VALUES (?, ?, ?, ?, ?, 1, 30, ?)
+      `).run(
+        'EXCLUSIVA: Alumno del Campus I es descubierto bajo efectos de sustancias durante el examen final — seguridad lo retiró del aula ante el asombro de compañeros y maestros',
+        'Lo que prometía ser un examen final rutinario de Bases de Datos en el Departamento de Tecnologías Digitales se convirtió esta mañana en uno de los episodios más insólitos en la historia reciente del campus. Alrededor de las 9:40 de la mañana, el alumno Cristian Alejandro Vargas Torres, de séptimo semestre, comenzó a mostrar un comportamiento errático dentro del aula: hablaba solo, se reía sin motivo aparente y en un momento intentó responder el examen con un plumón rojo que sacó de su mochila. La maestra titular, Dra. Patricia Leal, optó por detener la evaluación y llamar al personal de seguridad del plantel.\n\nSegún testigos presenciales, Vargas Torres habría llegado al examen ya en un estado alterado desde el momento en que cruzó la puerta. "Se veía raro desde que entró, pero nadie dijo nada porque pensamos que era de los nervios", declaró una compañera de clase que pidió guardar el anonimato. Las cámaras del pasillo exterior captaron al estudiante consumiendo una sustancia no identificada en el baño del segundo piso aproximadamente 20 minutos antes del inicio del examen.\n\nEl personal de seguridad llegó al aula en menos de cinco minutos y, tras una breve conversación, Vargas Torres fue retirado del salón entre risas propias y el silencio atónito del resto del grupo. La Dra. Leal optó por suspender la evaluación para todos los presentes y reprogramarla para la siguiente semana. Mientras tanto, el alumno fue trasladado a la enfermería del plantel, donde se confirmó que presentaba signos evidentes de intoxicación.\n\nFuentes internas del Departamento de Orientación Educativa señalaron que el caso ya fue turnado al Comité Disciplinario y que podría derivar en una suspensión temporal o, dependiendo de los resultados de los análisis clínicos solicitados, en una baja definitiva. El coordinador de la carrera emitió un breve comunicado interno pidiendo "discreción y respeto hacia el alumno involucrado", aunque para ese momento el video grabado por un compañero desde la última fila ya circulaba en todos los grupos de WhatsApp del campus.',
+        'Escándalo Universitario',
+        '/img/escandalo-drogas.jpg',
+        admin ? admin.id : 1,
+        new Date().toISOString()
+      );
+    }
+  } catch (e) {
+    console.warn('Advertencia al insertar noticia de escándalo:', e.message);
   }
 }
 
