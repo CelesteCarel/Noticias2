@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Documentación Técnica - Caso Práctico Seguridad en Cómputo</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 14mm 18mm 14mm;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.5;
+      font-size: 11pt;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+
+    /* Encabezado y Portada */
+    .header-box {
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .header-title h1 {
+      font-size: 18pt;
+      color: #0f172a;
+      margin: 0 0 4px 0;
+      font-weight: 700;
+    }
+
+    .header-title h2 {
+      font-size: 12pt;
+      color: #0284c7;
+      margin: 0 0 4px 0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .header-meta {
+      font-size: 9pt;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .institution-tag {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      color: #0369a1;
+      font-size: 8.5pt;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-align: right;
+    }
+
+    /* Secciones */
+    h2.section-title {
+      font-size: 13pt;
+      color: #0f172a;
+      border-left: 4px solid #0284c7;
+      padding-left: 8px;
+      margin-top: 22px;
+      margin-bottom: 10px;
+      font-weight: 700;
+      page-break-after: avoid;
+    }
+
+    h3.sub-title {
+      font-size: 11pt;
+      color: #334155;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-weight: 600;
+      page-break-after: avoid;
+    }
+
+    p {
+      margin: 0 0 8px 0;
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin: 0 0 10px 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 4px;
+    }
+
+    /* Tablas */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px 0;
+      font-size: 9.5pt;
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 7px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    /* Badges y Tags */
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 8pt;
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .badge-blue { background: #e0f2fe; color: #0369a1; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-purple { background: #f3e8ff; color: #7e22ce; }
+    .badge-amber { background: #fef3c7; color: #b45309; }
+
+    /* Cajas de código y notas */
+    .code-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 8.5pt;
+      color: #334155;
+      margin: 8px 0;
+      page-break-inside: avoid;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      page-break-inside: avoid;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .card-highlight {
+      border-left: 3px solid #0284c7;
+    }
+
+    .card-security {
+      border-left: 3px solid #10b981;
+    }
+
+    .card-title {
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 4px;
+      font-size: 10pt;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 8px 0;
+    }
+
+    .footer-note {
+      margin-top: 25px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+      font-size: 8.5pt;
+      color: #94a3b8;
+      text-align: center;
+    }
+
+    code {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 9pt;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-box">
+    <div class="header-title">
+      <h2>Universidad Autónoma de Chiapas</h2>
+      <h1>Seguridad en Cómputo: Caso Práctico</h1>
+      <div class="header-meta">
+        <strong>Tema:</strong> Confidencialidad e Integridad &nbsp;|&nbsp; 
+        <strong>Proyecto:</strong> Portal de Noticias con RBAC Dinámico y API REST JWT
+      </div>
+    </div>
+    <div class="institution-tag">
+      Documentación Técnica Oficial<br>
+      Evaluación de Requerimientos
+    </div>
+  </div>
+
+  <p>
+    El presente documento técnico detalla la arquitectura, librerías, decisiones de diseño y mecanismos de seguridad implementados en el <strong>Portal de Noticias</strong> para dar cumplimiento integral a las especificaciones funcionales y de seguridad computacional solicitadas en el caso práctico.
+  </p>
+
+  <h2 class="section-title">1. Librerías y Tecnologías Utilizadas</h2>
+
+  <p>
+    El backend fue desarrollado sobre el entorno de ejecución <strong>Node.js (v22+)</strong> utilizando una arquitectura desacoplada basada en servicios RESTful y cliente SPA (Single Page Application).
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 22%;">Librería / Módulo</th>
+        <th style="width: 18%;">Versión</th>
+        <th>Propósito y Rol en la Seguridad del Sistema</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>express</strong></td>
+        <td><code>^4.21.2</code></td>
+        <td>Framework backend encargado del enrutamiento HTTP, procesamiento de middlewares de autenticación, control de errores y exposición de la API REST.</td>
+      </tr>
+      <tr>
+        <td><strong>jsonwebtoken</strong></td>
+        <td><code>^9.0.2</code></td>
+        <td>Generación, firma digital criptográfica con algoritmo <strong>HS256</strong> y validación estricta de la integridad y expiración de los <em>Access Tokens</em>.</td>
+      </tr>
+      <tr>
+        <td><strong>bcryptjs</strong></td>
+        <td><code>^3.0.2</code></td>
+        <td>Algoritmo de derivación de claves y hashing robusto con <em>salt</em> aleatorio (factor de coste 12) para garantizar el almacenamiento unidireccional de contraseñas.</td>
+      </tr>
+      <tr>
+        <td><strong>cors</strong></td>
+        <td><code>^2.8.5</code></td>
+        <td>Middleware para configurar políticas de <em>Cross-Origin Resource Sharing</em>, restringiendo las peticiones únicamente a los orígenes del frontend autorizados.</td>
+      </tr>
+      <tr>
+        <td><strong>dotenv</strong></td>
+        <td><code>^16.4.7</code></td>
+        <td>Gestión segura de variables de entorno (secretos JWT, credenciales SMTP y puertos), manteniéndolas fuera del código fuente.</td>
+      </tr>
+      <tr>
+        <td><strong>multer</strong></td>
+        <td><code>^2.4.0</code></td>
+        <td>Recepción y procesamiento de cargas de archivos <code>multipart/form-data</code> para la subida de imágenes de noticias bajo límites estrictos.</td>
+      </tr>
+      <tr>
+        <td><strong>nodemailer</strong></td>
+        <td><code>^10.0.13</code></td>
+        <td>Servicio de transporte de correo electrónico para el flujo de recuperación de contraseña (con soporte automático para pruebas en Ethereal y servidores SMTP reales).</td>
+      </tr>
+      <tr>
+        <td><strong>node:sqlite</strong><br><em>(Módulo Nativo)</em></td>
+        <td><code>Node.js 22+</code></td>
+        <td>Motor de base de datos relacional embebido (<code>DatabaseSync</code>). Soporta claves foráneas, consultas preparadas parametrizadas y triggers de inmutabilidad.</td>
+      </tr>
+      <tr>
+        <td><strong>node:crypto</strong><br><em>(Módulo Nativo)</em></td>
+        <td><code>Nativo</code></td>
+        <td>Generador de aleatoriedad criptográfica (<code>randomBytes</code>, <code>randomInt</code>) para Refresh Tokens, códigos numéricos de recuperación y nombres de archivo.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="section-title">2. Arquitectura del Código y Organización de Módulos</h2>
+
+  <p>
+    La aplicación sigue una separación estricta entre capa de persistencia, lógica de negocio, middlewares de seguridad y cliente web:
+  </p>
+
+  <div class="grid-2">
+    <div class="card card-highlight">
+      <div class="card-title">Backend y API REST (<code>/src</code> y <code>server.js</code>)</div>
+      <ul style="margin-bottom:0; font-size:9pt;">
+        <li><code>server.js</code>: Servidor HTTP/HTTPS, cabeceras de seguridad CSP/HSTS, CORS y manejador global de errores.</li>
+        <li><code>src/database/schema.sql</code>: Esquema de 7 tablas relacionales y triggers SQL de auditoría.</li>
+        <li><code>src/database/db.js</code>: Conexión SQLite, migraciones automáticas y seed inicial de datos.</li>
+        <li><code>src/middleware/auth.js</code>: Verificación de JWT, cookies HttpOnly y ciclo de vida de tokens.</li>
+        <li><code>src/middleware/permissions.js</code>: Autorización RBAC en tiempo real contra BD.</li>
+        <li><code>src/middleware/sanitizer.js</code>: Limpieza XSS y validación de tipos y tamaños.</li>
+        <li><code>src/middleware/upload.js</code>: Validación de imágenes por firmas binarias (Magic Bytes).</li>
+        <li><code>src/routes/</code>: Rutas de autenticación (<code>auth</code>), noticias (<code>noticias</code>) y administración (<code>admin</code>).</li>
+      </ul>
+    </div>
+
+    <div class="card card-highlight">
+      <div class="card-title">Frontend SPA (<code>/public</code>)</div>
+      <ul style="margin-bottom:0; font-size:9pt;">
+        <li><code>public/index.html</code>: Interfaz de usuario completa (Portal, Modales de Auth, Editor y Dashboard).</li>
+        <li><code>public/js/api.js</code>: Cliente HTTP que inyecta <code>Authorization: Bearer</code> y gestiona el refresco automático de tokens.</li>
+        <li><code>public/js/auth.js</code>: Control de estado del usuario autenticado, login, registro y cierre de sesión.</li>
+        <li><code>public/js/news.js</code>: Lectura protegida, filtros por categoría, búsqueda y publicación con carga de imágenes.</li>
+        <li><code>public/js/admin.js</code>: Panel interactivo para gestión de usuarios, matriz de permisos en tiempo real y bitácora.</li>
+        <li><code>public/js/app.js</code>: Enrutamiento de vistas SPA y control de ventanas modales.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 class="section-title">3. Cumplimiento de Requerimientos Funcionales</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Requerimiento</th>
+        <th style="width: 30%;">Endpoints REST</th>
+        <th>Detalle de Implementación en Código</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Gestión de Usuarios</strong></td>
+        <td>
+          <span class="badge badge-blue">POST</span> <code>/api/auth/register</code><br>
+          <span class="badge badge-blue">POST</span> <code>/api/auth/login</code><br>
+          <span class="badge badge-blue">POST</span> <code>/api/auth/change-password</code><br>
+          <span class="badge badge-blue">POST</span> <code>/api/auth/forgot-password</code><br>
+          <span class="badge badge-blue">POST</span> <code>/api/auth/reset-password</code>
+        </td>
+        <td>
+          • Registro con Nombre, Email y Contraseña (rol predeterminado: <em>Usuario Regular</em> para evitar asignación masiva de privilegios).<br>
+          • Inicio de sesión con generación de JWT y Refresh Token.<br>
+          • Cambio de contraseña con revocación de todas las sesiones previas.<br>
+          • Recuperación mediante código numérico criptográfico de 6 dígitos enviado por correo (caducidad de 15 min).
+        </td>
+      </tr>
+      <tr>
+        <td><strong>2. Gestión de Roles</strong></td>
+        <td>
+          <span class="badge badge-purple">DB</span> Tabla <code>roles</code><br>
+          <span class="badge badge-purple">DB</span> Tabla <code>rol_permisos</code>
+        </td>
+        <td>
+          Se implementan los tres roles base del caso práctico:<br>
+          • <strong>Administrador:</strong> Acceso total al portal, noticias, gestión de usuarios, roles y auditoría.<br>
+          • <strong>Editor:</strong> Puede crear, editar y eliminar noticias (sus propios artículos o gestión editorial).<br>
+          • <strong>Usuario Regular:</strong> Acceso exclusivo de lectura y consumo de contenido.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>3. Gestión de Permisos</strong></td>
+        <td>
+          <span class="badge badge-blue">GET</span> <code>/api/admin/permisos</code><br>
+          <span class="badge badge-green">PUT</span> <code>/api/admin/roles/:id/permisos</code>
+        </td>
+        <td>
+          Permisos atómicos (<code>noticias.leer</code>, <code>noticias.crear</code>, <code>noticias.editar</code>, <code>noticias.eliminar</code>, <code>usuarios.gestionar</code>, <code>roles.gestionar</code>, <code>auditoria.ver</code>). Asignación dinámica mediante matriz interactiva con switches en el Dashboard.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>4. Control de Acceso</strong></td>
+        <td>
+          Middleware <code>requirePermission()</code>
+        </td>
+        <td>
+          El acceso se valida en el servidor en cada petición contra la tabla <code>rol_permisos</code>. Se registra todo acceso e intento no autorizado en la bitácora.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>5. Dashboard de Administración</strong></td>
+        <td>
+          <span class="badge badge-blue">GET</span> <code>/api/admin/usuarios</code><br>
+          <span class="badge badge-green">PUT</span> <code>/api/admin/usuarios/:id/rol</code><br>
+          <span class="badge badge-blue">POST</span> <code>/api/admin/roles</code><br>
+          <span class="badge badge-blue">GET</span> <code>/api/admin/auditoria</code>
+        </td>
+        <td>
+          Panel administrativo con 3 módulos:<br>
+          1. <strong>Directorio de usuarios:</strong> Listado y reasignación de roles inmediata.<br>
+          2. <strong>Roles y Permisos:</strong> Creación de nuevos roles y actualización dinámica de permisos.<br>
+          3. <strong>Bitácora de Auditoría:</strong> Visualización de eventos de seguridad con filtros.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>6. Arquitectura Web y Servicios REST</strong></td>
+        <td>
+          Cabecera <code>Authorization: Bearer &lt;token&gt;</code>
+        </td>
+        <td>
+          El frontend consume exclusivamente la API REST mediante <code>fetch()</code> en formato JSON con los verbos <code>GET</code>, <code>POST</code>, <code>PUT</code> y <code>DELETE</code>. No existe conexión directa entre el navegador y la base de datos.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="section-title">4. Cumplimiento de Requerimientos de Seguridad Computacional</h2>
+
+  <div class="card card-security">
+    <div class="card-title">1. Cifrado de Contraseñas (bcrypt)</div>
+    <p style="font-size:9pt; margin:0;">
+      Las contraseñas se almacenan como hashes generados con <code>bcryptjs</code> utilizando un factor de coste de 12 (<code>bcrypt.genSaltSync(12)</code>). Nunca se almacenan en texto plano ni se utilizan algoritmos reversibles. El sanitizador excluye los campos de credenciales para preservar la integridad exacta de la clave elegida.
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">2. Comunicación Cifrada (HTTPS / TLS)</div>
+    <p style="font-size:9pt; margin:0;">
+      <code>server.js</code> incorpora soporte nativo para TLS mediante el módulo <code>https</code>. Incluye el script <code>npm run certs</code> para generación de certificados de desarrollo y activa automáticamente la cabecera <code>Strict-Transport-Security: max-age=31536000; includeSubDomains</code> (HSTS).
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">3. Gestión Segura de Tokens JWT y Refresh Tokens</div>
+    <p style="font-size:9pt; margin:0;">
+      • <strong>Access Token:</strong> Vigencia corta de <strong>15 minutos</strong> (<code>ACCESS_TOKEN_EXPIRY = '15m'</code>), firmado con algoritmo <strong>HS256</strong>.<br>
+      • <strong>Refresh Token:</strong> Token criptográfico de 7 días almacenado en BD con detección de reutilización y revocación automática (rotación de tokens).<br>
+      • <strong>Almacenamiento Seguro:</strong> El token de acceso vive únicamente en la memoria de la aplicación JS (no en <code>localStorage</code>) y se respalda con cookies <code>HttpOnly</code>, <code>SameSite=Strict</code> y <code>Secure</code>.<br>
+      • <strong>Secretos:</strong> Las claves secretas se cargan desde <code>.env</code> y el servidor rechaza valores por defecto o de baja entropía.
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">4. Autorización Verificada en el Servidor</div>
+    <p style="font-size:9pt; margin:0;">
+      Cada endpoint protegido ejecuta <code>authenticateToken</code> y <code>requirePermission</code>, consultando la base de datos en tiempo real. La seguridad no delega en que la interfaz oculte botones o vistas, garantizando que peticiones directas vía HTTP sean validadas rigurosamente.
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">5. Validación y Sanitización de Entradas (XSS y SQL Injection)</div>
+    <p style="font-size:9pt; margin:0;">
+      • <strong>Inyección SQL:</strong> Todas las consultas a la base de datos SQLite utilizan <em>prepared statements</em> con parámetros vinculados (<code>?</code>), eliminando cualquier concatenación directa.<br>
+      • <strong>XSS:</strong> El middleware <code>sanitizeInput</code> elimina etiquetas peligrosas (<code>&lt;script&gt;</code>, <code>&lt;iframe&gt;</code>, eventos en línea como <code>onload</code>/<code>onerror</code>). En el frontend, el DOM se manipula con <code>textContent</code> y <code>replaceChildren()</code>.<br>
+      • <strong>Límites de Entrada:</strong> Validación de longitud máxima en nombres, títulos, contenidos y correos electrónicos.
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">6. Protección contra Ataques de Fuerza Bruta y DoS</div>
+    <p style="font-size:9pt; margin:0;">
+      • <strong>Bloqueo Temporal de Cuenta:</strong> Tras 5 intentos fallidos consecutivos de contraseña (<code>MAX_FAILED_ATTEMPTS = 5</code>), la cuenta se bloquea automáticamente durante <strong>15 minutos</strong> respondiendo HTTP <code>423 Locked</code>.<br>
+      • <strong>Rate Limiting:</strong> Middleware en memoria (<code>rateLimiter.js</code>) que impone límites de solicitudes por ventana de tiempo en endpoints de autenticación y API general, respondiendo HTTP <code>429 Too Many Requests</code>.
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">7. Registro de Auditoría con Trazabilidad e Inmutabilidad</div>
+    <p style="font-size:9pt; margin:0;">
+      La tabla <code>auditoria</code> almacena fecha y hora ISO, ID de usuario, acción realizada, detalles y dirección IP real (<code>getClientIp</code>). A nivel de base de datos, los triggers de SQLite <code>trg_auditoria_no_update</code> y <code>trg_auditoria_no_delete</code> abortan cualquier intento de modificación o borrado de eventos, garantizando un registro inmutable (append-only).
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">8. Manejo Seguro de CORS</div>
+    <p style="font-size:9pt; margin:0;">
+      CORS está configurado en <code>server.js</code> mediante una lista blanca estricta (<code>allowedOrigins</code>). Se prohíbe explícitamente el uso de comodines (<code>*</code>) al operar con credenciales habilitadas (<code>credentials: true</code>).
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">9. Principio de Mínimo Privilegio y Prevención de Huérfanos</div>
+    <p style="font-size:9pt; margin:0;">
+      Cada rol posee únicamente los privilegios indispensables. Además, la función <code>wouldOrphanCriticalPermission</code> impide que un administrador revoque el permiso <code>roles.gestionar</code> o <code>usuarios.gestionar</code> si ningún otro rol lo conserva, previniendo el bloqueo total de la administración del sistema.
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">10. Manejo de Errores sin Fuga de Información</div>
+    <p style="font-size:9pt; margin:0;">
+      Se deshabilita la cabecera <code>x-powered-by</code> de Express y se implementa un manejador global de errores que captura excepciones internas y responde con mensajes JSON genéricos (HTTP 500/400), impidiendo la divulgación de trazas de pila (*stack traces*), sintaxis SQL o versiones de software.
+    </p>
+  </div>
+
+  <div class="card card-security">
+    <div class="card-title">Extra: Carga Segura de Imágenes (Magic Bytes)</div>
+    <p style="font-size:9pt; margin:0;">
+      Las imágenes subidas por los redactores se almacenan en <code>storage/uploads/</code> (fuera del directorio <code>public/</code>). El servidor genera nombres aleatorios criptográficos, limita el tamaño a 5 MB y valida los primeros bytes binarios del archivo (*Magic Bytes*) para confirmar que es un JPG, PNG, GIF o WEBP real antes de aceptarlo.
+    </p>
+  </div>
+
+  <h2 class="section-title">5. Resultados de Pruebas Automatizadas</h2>
+
+  <p>
+    El proyecto incluye dos suites de pruebas integrales con **79 verificaciones automatizadas** que se ejecutan sobre un entorno aislado con base de datos temporal:
+  </p>
+
+  <div class="code-box">
+    <strong>$ npm test</strong><br>
+    &gt; portal-de-noticias@1.0.0 test<br>
+    &gt; node --no-warnings test/api.test.js &amp;&amp; node --no-warnings test/config.test.js<br><br>
+    • Suite 1: API REST, Autenticación JWT, RBAC Dinámico y Seguridad &nbsp;<strong>[59/59 Aprobadas]</strong><br>
+    • Suite 2: Configuración, Esquema SQLite, Inmutabilidad, Secretos y TLS &nbsp;<strong>[20/20 Aprobadas]</strong><br>
+    <strong>Resultado Global: 79 correctas, 0 fallidas (100% de éxito).</strong>
+  </div>
+
+  <div class="footer-note">
+    Portal de Noticias • Sistema de Seguridad y Control de Acceso Basado en Roles (RBAC) • Universidad Autónoma de Chiapas
+  </div>
+
+</body>
+</html>
