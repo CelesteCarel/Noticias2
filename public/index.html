@@ -1,0 +1,1206 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal de Noticias • Información y Divulgación</title>
+    <meta
+      name="description"
+      content="Portal de noticias con sistema de control de acceso basado en roles (RBAC dinámico), tokens JWT seguros y registro de auditoría."
+    />
+
+    <!-- Fuentes Tipográficas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Iconos FontAwesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <!-- Estilos Principales -->
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+
+  <body>
+    <!-- Encabezado Principal / Masthead Periodístico -->
+    <header class="masthead-header">
+      <div class="container masthead-container">
+        <div class="masthead-brand">
+          <a href="#" class="brand-link" id="brandLogo">
+            <span class="brand-sub"
+              >ESCUELA DE TECNOLOGIAS DIGITALES APLICADAS, CAMPUS I</span
+            >
+            <h1 class="brand-title">PORTAL DE NOTICIAS</h1>
+            <span class="brand-tagline">Gaceta Universitaria</span>
+          </a>
+        </div>
+
+        <!-- Barra de Acciones y Sesión -->
+        <div class="header-actions">
+          <!-- Buscador -->
+          <div class="header-search">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Buscar noticias, autores o temas..."
+              autocomplete="off"
+            />
+            <button
+              class="search-clear-btn"
+              id="searchClearBtn"
+              style="display: none"
+              title="Limpiar búsqueda"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Botones de Navegación de Vistas -->
+          <button
+            class="btn btn-outline"
+            id="btnNavPortal"
+            style="display: none"
+          >
+            <i class="fa-solid fa-newspaper"></i> <span>Ver Noticias</span>
+          </button>
+
+          <button
+            class="btn btn-primary"
+            id="btnNavNewArticle"
+            style="display: none"
+          >
+            <i class="fa-solid fa-pen-nib"></i> <span>Nueva Noticia</span>
+          </button>
+
+          <button
+            class="btn btn-secondary"
+            id="btnNavAdmin"
+            style="display: none"
+          >
+            <i class="fa-solid fa-gear"></i> <span>Administración</span>
+          </button>
+
+          <button
+            class="btn btn-outline"
+            id="btnNavCryptoDemo"
+            title="Demostración de Cifrado Simétrico y Firma Asimétrica"
+          >
+            <i class="fa-solid fa-shield-halved"></i> <span>Demo Criptografía</span>
+          </button>
+
+          <!-- Bloque de Autenticación -->
+          <div id="authContainer">
+            <div id="guestButtons" class="auth-group">
+              <button class="btn btn-ghost" id="btnLoginOpen">Ingresar</button>
+              <button class="btn btn-primary btn-sm" id="btnRegisterOpen">
+                Registrarse
+              </button>
+            </div>
+
+            <div id="userProfileBadge" class="user-badge" style="display: none">
+              <div class="user-avatar" id="userAvatar">U</div>
+              <div class="user-info">
+                <span class="user-name" id="userNameDisplay">Usuario</span>
+                <span class="user-role-tag" id="userRoleBadge">Lector</span>
+              </div>
+              <button
+                class="btn-profile-action"
+                id="btnOpenChangePass"
+                title="Cambiar Contraseña"
+              >
+                <i class="fa-solid fa-key"></i>
+              </button>
+              <button
+                class="btn-profile-action"
+                id="btnLogout"
+                title="Cerrar Sesión"
+              >
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Barra de Secciones / Categorías -->
+    <nav class="categories-bar" id="categoriesBar">
+      <div class="container categories-container" id="categoriesList">
+        <button class="category-pill active" data-cat="Todas">
+          Todas las Secciones
+        </button>
+        <button class="category-pill" data-cat="Escándalo Universitario">
+          Escándalo Universitario
+        </button>
+        <button class="category-pill" data-cat="Tecnología">Tecnología</button>
+        <button class="category-pill" data-cat="Ciencia">Ciencia</button>
+        <button class="category-pill" data-cat="Economía">Economía</button>
+        <button class="category-pill" data-cat="Deportes">Deportes</button>
+        <button class="category-pill" data-cat="Cultura">Cultura</button>
+      </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="main-content">
+      <!-- VISTA 1: PORTAL DE NOTICIAS -->
+      <section id="viewPortal" class="active-view">
+        <div class="container">
+          <!-- Noticia Principal (Destacada) -->
+          <article class="hero-article" id="featuredHero">
+            <div class="hero-image-wrap">
+              <div class="hero-image" id="heroImage"></div>
+            </div>
+            <div class="hero-details">
+              <div class="hero-meta-top">
+                <span class="badge badge-category" id="heroCategory"
+                  >Tecnología</span
+                >
+                <span class="hero-date" id="heroDate"
+                  ><i class="fa-regular fa-clock"></i> Reciente</span
+                >
+              </div>
+              <h2 class="hero-title" id="heroTitle">
+                Cargando artículo principal...
+              </h2>
+              <p class="hero-excerpt" id="heroExcerpt">
+                Obteniendo la información desde el servidor...
+              </p>
+              <div class="hero-footer">
+                <span class="hero-author" id="heroAuthor"
+                  ><i class="fa-solid fa-user-pen"></i> Redacción</span
+                >
+                <button class="btn btn-primary" id="heroReadBtn">
+                  Leer Artículo Completo <i class="fa-solid fa-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Encabezado de Sección -->
+          <div class="section-title-bar">
+            <div>
+              <h3 class="section-heading" id="sectionTitle">Edición del Día</h3>
+              <p class="section-subtext" id="sectionSubtitle">
+                Artículos y notas informativas de la comunidad académica.
+              </p>
+            </div>
+            <span class="articles-count-badge" id="newsCountBadge"
+              >0 artículos</span
+            >
+          </div>
+
+          <!-- Grid de Artículos -->
+          <div class="news-grid" id="newsGrid">
+            <!-- Renderizado dinámico -->
+          </div>
+
+          <!-- Estado Vacío -->
+          <div class="empty-state" id="emptyState" style="display: none">
+            <div class="empty-icon">
+              <i class="fa-regular fa-newspaper"></i>
+            </div>
+            <h3>No se encontraron publicaciones</h3>
+            <p>
+              No hay artículos disponibles para el criterio o categoría
+              seleccionada.
+            </p>
+            <button class="btn btn-outline" id="btnResetFilters">
+              Ver Todas las Noticias
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA 2: PANEL DE ADMINISTRACIÓN Y CONTROL RBAC -->
+      <section id="viewAdmin" class="view-section" style="display: none">
+        <div class="container">
+          <div class="admin-top-bar">
+            <div>
+              <span class="admin-badge"
+                ><i class="fa-solid fa-lock"></i> Panel Administrativo</span
+              >
+              <h2 class="admin-title">Gestión de Acceso y Auditoría</h2>
+              <p class="admin-desc">
+                Control de usuarios, administración dinámica de roles y registro
+                de eventos.
+              </p>
+            </div>
+            <div class="admin-stats-summary" id="adminQuickStats">
+              <!-- Estadísticas -->
+            </div>
+          </div>
+
+          <!-- Pestañas del Panel -->
+          <div class="admin-nav-tabs">
+            <button
+              class="admin-tab active"
+              data-tab="tabUsers"
+              id="tabBtnUsers"
+            >
+              <i class="fa-solid fa-users"></i> Directorio de Usuarios
+            </button>
+            <button class="admin-tab" data-tab="tabRoles" id="tabBtnRoles">
+              <i class="fa-solid fa-key"></i> Roles y Permisos Dinámicos
+            </button>
+            <button class="admin-tab" data-tab="tabAudit" id="tabBtnAudit">
+              <i class="fa-solid fa-clipboard-check"></i> Bitácora de Auditoría
+            </button>
+          </div>
+
+          <!-- TAB 1: GESTIÓN DE USUARIOS -->
+          <div class="admin-tab-pane active" id="tabUsers">
+            <div class="card-panel">
+              <div class="card-panel-header">
+                <div>
+                  <h4>Usuarios del Sistema</h4>
+                  <p>
+                    Asigna o revoca roles en tiempo real según los
+                    requerimientos del sistema.
+                  </p>
+                </div>
+                <div class="panel-tools">
+                  <input
+                    type="text"
+                    id="userSearchInput"
+                    class="form-input form-input-sm"
+                    placeholder="Buscar por nombre o correo..."
+                  />
+                </div>
+              </div>
+              <div class="table-container">
+                <table class="data-table" id="usersTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nombre</th>
+                      <th>Correo Electrónico</th>
+                      <th>Rol Actual</th>
+                      <th>Artículos</th>
+                      <th>Fecha de Registro</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody">
+                    <!-- Filas de usuarios -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: ROLES Y PERMISOS DINÁMICOS -->
+          <div class="admin-tab-pane" id="tabRoles" style="display: none">
+            <div class="card-panel">
+              <div class="card-panel-header">
+                <div>
+                  <h4>Matriz de Roles y Permisos (RBAC Dinámico)</h4>
+                  <p>
+                    Configura los permisos relacionales asignados a cada rol.
+                    Los cambios se persisten de inmediato en la base de datos.
+                  </p>
+                </div>
+                <div class="panel-tools">
+                  <button class="btn btn-primary btn-sm" id="btnCreateRoleOpen">
+                    <i class="fa-solid fa-plus"></i> Nuevo Rol
+                  </button>
+                </div>
+              </div>
+
+              <div class="roles-grid" id="rolesMatrixContainer">
+                <!-- Matriz de permisos -->
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: BITÁCORA DE AUDITORÍA -->
+          <div class="admin-tab-pane" id="tabAudit" style="display: none">
+            <div class="card-panel">
+              <div class="card-panel-header">
+                <div>
+                  <h4>Registro Inmutable de Auditoría</h4>
+                  <p>
+                    Trazabilidad cronológica de accesos, intentos fallidos,
+                    cambios de privilegios y operaciones CRUD.
+                  </p>
+                </div>
+                <div class="panel-tools audit-tools">
+                  <select
+                    id="auditActionFilter"
+                    class="form-input form-input-sm"
+                  >
+                    <option value="Todas">Todas las Acciones</option>
+                    <option value="Inicio de Sesión">Inicios de Sesión</option>
+                    <option value="Fuerza">Bloqueos / Intentos Fallidos</option>
+                    <option value="Noticia">Operaciones de Noticias</option>
+                    <option value="Rol">Cambios de Roles / Permisos</option>
+                    <option value="Contraseña">
+                      Operaciones de Contraseña
+                    </option>
+                  </select>
+                  <input
+                    type="text"
+                    id="auditSearchInput"
+                    class="form-input form-input-sm"
+                    placeholder="Buscar en eventos..."
+                  />
+                  <button
+                    class="btn btn-outline btn-sm"
+                    id="btnRefreshAudit"
+                    title="Actualizar bitácora"
+                  >
+                    <i class="fa-solid fa-rotate-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table class="data-table" id="auditTable">
+              <div class="table-container">
+                <table class="data-table" id="auditTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Fecha y Hora</th>
+                      <th>Usuario Responsable</th>
+                      <th>Rol</th>
+                      <th>Acción</th>
+                      <th>Detalles</th>
+                      <th>Dirección IP</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditTableBody">
+                    <!-- Filas de eventos -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- =========================================================
+       MODALES DE LA APLICACIÓN
+       ========================================================= -->
+
+    <!-- MODAL: LECTURA COMPLETA DE ARTÍCULO -->
+    <div class="modal-backdrop" id="modalArticleReader">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <button class="modal-close" id="closeReaderModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="reader-header">
+            <img id="readerImg" src="" alt="Noticia" class="reader-image" />
+            <div class="reader-meta">
+              <span class="badge badge-category" id="readerCategory"
+                >Categoría</span
+              >
+              <span class="reader-date" id="readerDate"
+                ><i class="fa-regular fa-calendar"></i> Fecha</span
+              >
+              <span class="reader-author" id="readerAuthor"
+                ><i class="fa-solid fa-user-pen"></i> Autor</span
+              >
+            </div>
+          </div>
+          <div class="modal-body reader-body">
+            <h2 class="reader-title" id="readerTitle">Título de la Noticia</h2>
+            <div class="reader-text" id="readerContent"></div>
+
+            <!-- SECCIÓN CRIPTOGRÁFICA: MECANISMOS SIMÉTRICO Y ASIMÉTRICO -->
+            <div class="crypto-security-panel" id="readerCryptoPanel">
+              <div class="crypto-panel-header">
+                <h5><i class="fa-solid fa-shield-halved"></i> Garantías Criptográficas de la Publicación</h5>
+                <span class="crypto-tag">Seguridad Aplicada UNACH</span>
+              </div>
+
+              <!-- MECANISMO 2: FIRMA DIGITAL ASIMÉTRICA (RSA-2048 / SHA-256) -->
+              <div class="crypto-block crypto-asymmetric-block">
+                <div class="crypto-block-title">
+                  <div class="crypto-badge-seal valid" id="readerSealBadge">
+                    <i class="fa-solid fa-certificate"></i> Sello Digital Oficial (RSA-SHA256)
+                  </div>
+                  <span class="crypto-algo-label">Mecanismo Asimétrico • Llave de 2048 bits</span>
+                </div>
+                <p class="crypto-desc">
+                  Este documento fue firmado digitalmente con la <strong>Llave Privada</strong> del servidor al publicarse, garantizando su autenticidad, autoría e integridad inmutable.
+                </p>
+                <div class="crypto-actions-row">
+                  <button type="button" class="btn btn-sm btn-outline" id="btnVerifySignatureLive">
+                    <i class="fa-solid fa-check-double"></i> Verificar Firma con Llave Pública
+                  </button>
+                  <button type="button" class="btn btn-sm btn-ghost text-danger" id="btnTestTamperingLive" title="Demuestra cómo la firma detecta si un atacante altera una sola letra">
+                    <i class="fa-solid fa-bug"></i> Probar Detección de Alteración
+                  </button>
+                </div>
+                <!-- Resultado de la verificación -->
+                <div class="crypto-verification-result" id="readerVerificationResult" style="display: none;"></div>
+              </div>
+
+              <!-- MECANISMO 1: CIFRADO SIMÉTRICO (AES-256-GCM) -->
+              <div class="crypto-block crypto-symmetric-block" id="readerConfidentialBlock" style="display: none;">
+                <div class="crypto-block-title">
+                  <div class="crypto-badge-seal symmetric">
+                    <i class="fa-solid fa-key"></i> Información Sensible Protegida (AES-256-GCM)
+                  </div>
+                  <span class="crypto-algo-label">Mecanismo Simétrico • Clave de 256 bits</span>
+                </div>
+                <p class="crypto-desc">
+                  Las notas de investigación y fuentes reservadas se almacenan <strong>cifradas en reposo</strong> en la base de datos para prevenir fugas de información.
+                </p>
+                
+                <div class="confidential-note-display">
+                  <label><i class="fa-solid fa-unlock"></i> Dato Descifrado en la Aplicación (Texto en Claro):</label>
+                  <div class="confidential-text-clear" id="readerConfidentialClear"></div>
+                </div>
+
+                <div class="crypto-actions-row">
+                  <button type="button" class="btn btn-sm btn-outline" id="btnToggleRawDbView">
+                    <i class="fa-solid fa-database"></i> Ver cómo está guardado en BD (Cifrado Raw)
+                  </button>
+                </div>
+
+                <!-- Comparador Base de Datos vs Aplicación -->
+                <div class="raw-db-comparison" id="readerRawDbBox" style="display: none;">
+                  <div class="raw-db-header">
+                    <span><i class="fa-solid fa-table"></i> Registro real en columna <code>noticias.nota_confidencial</code>:</span>
+                  </div>
+                  <pre class="raw-cipher-code" id="readerRawCipher"></pre>
+                  <div class="cipher-breakdown">
+                    <span class="badge-cipher iv"><i class="fa-solid fa-dice"></i> IV (12 bytes)</span>
+                    <span class="badge-cipher tag"><i class="fa-solid fa-tag"></i> Auth Tag GCM (16 bytes)</span>
+                    <span class="badge-cipher data"><i class="fa-solid fa-lock"></i> Ciphertext AES-256</span>
+                  </div>
+                  <small class="text-muted">Si un atacante sustrae el archivo de la base de datos, solo verá la cadena cifrada incomprensible de arriba y no podrá obtener el texto original sin la variable <code>CRYPTO_AES_KEY</code>.</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" id="closeReaderModalFooter">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: REDACTAR / EDITAR NOTICIA CON VISTA PREVIA Y CONTROL DE CENSURA -->
+    <div class="modal-backdrop" id="modalArticleEditor">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <button class="modal-close" id="closeEditorModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3 id="editorModalTitle">
+              <i class="fa-solid fa-pen-nib"></i> Redactar Noticia
+            </h3>
+            <p class="modal-subtitle">
+              Configura el contenido, categoría, imagen y el nivel de censura (blur) para la vista previa de invitados.
+            </p>
+          </div>
+          
+          <div class="modal-body editor-modal-layout">
+            <!-- Columna Izquierda: Formulario -->
+            <form id="articleForm" class="editor-form-pane">
+              <input type="hidden" id="editArticleId" />
+
+              <div class="form-field">
+                <label for="articleTitle">Título / Titular <span class="required">*</span></label>
+                <input
+                  type="text"
+                  id="articleTitle"
+                  class="form-input"
+                  required
+                  placeholder="Ej: EXCLUSIVA: Alumno es descubierto bajo efectos de sustancias..."
+                />
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-field">
+                  <label for="articleCategory">Sección / Categoría <span class="required">*</span></label>
+                  <select id="articleCategory" class="form-input" required>
+                    <option value="Escándalo Universitario">Escándalo Universitario</option>
+                    <option value="Tecnología">Tecnología</option>
+                    <option value="Ciencia">Ciencia</option>
+                    <option value="Economía">Economía</option>
+                    <option value="Deportes">Deportes</option>
+                    <option value="Cultura">Cultura</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="articlePresetImg">Imagen Sugerida</label>
+                  <select id="articlePresetImg" class="form-input">
+                    <option value="">Personalizada (URL)</option>
+                    <option value="/img/escandalo-drogas.jpg">Foto Escándalo / Drogas</option>
+                    <option value="https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80">Laboratorio / Universidad</option>
+                    <option value="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80">Ciencia & Espacio</option>
+                    <option value="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80">Ciberseguridad & Redes</option>
+                    <option value="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80">Robótica & Innovación</option>
+                    <option value="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80">Comunidad Universitaria</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="articleImgUrl">URL de la Imagen</label>
+                <input
+                  type="text"
+                  id="articleImgUrl"
+                  class="form-input"
+                  placeholder="/img/escandalo-drogas.jpg o https://images.unsplash.com/..."
+                />
+                <div class="upload-area" id="articleUploadArea">
+                  <input
+                    type="file"
+                    id="articleImgFile"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                  />
+                  <label class="upload-label" for="articleImgFile">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Elegir o arrastrar imagen desde tu computadora</span>
+                  </label>
+                  <p class="upload-hint" id="articleUploadHint">JPG, PNG, WEBP o GIF. Máximo 5 MB.</p>
+                  <div class="upload-preview" id="articleImgPreview" hidden>
+                    <img id="articleImgPreviewImg" src="" alt="Vista previa de la imagen seleccionada" />
+                    <div class="upload-meta">
+                      <span class="upload-name" id="articleImgPreviewName"></span>
+                      <span class="upload-size" id="articleImgPreviewSize"></span>
+                    </div>
+                    <button type="button" class="upload-clear" id="btnClearArticleImg" aria-label="Quitar la imagen seleccionada" title="Quitar imagen">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="articleContent">Cuerpo Completo del Artículo <span class="required">*</span></label>
+                <textarea
+                  id="articleContent"
+                  class="form-input"
+                  rows="7"
+                  required
+                  placeholder="Escribe el contenido completo de la noticia aquí..."
+                ></textarea>
+              </div>
+
+              <div class="form-field">
+                <div class="label-row">
+                  <label for="articleConfidentialNote">
+                    <i class="fa-solid fa-user-shield text-primary"></i> Nota Confidencial / Fuentes Protegidas
+                  </label>
+                  <span class="badge badge-crypto-pill">Cifrado Simétrico AES-256-GCM</span>
+                </div>
+                <textarea
+                  id="articleConfidentialNote"
+                  class="form-input"
+                  rows="3"
+                  placeholder="Información confidencial, fuentes periodísticas reservadas o datos de investigación que se cifrarán en reposo..."
+                ></textarea>
+                <p class="form-hint">
+                  <i class="fa-solid fa-lock"></i> Se guardará cifrado en la base de datos con AES-256-GCM usando la llave de entorno <code>CRYPTO_AES_KEY</code>. Además, toda la noticia se firmará digitalmente con la Llave Privada RSA.
+                </p>
+              </div>
+
+              <!-- OPCIONES DE PORTADA Y CENSURA -->
+              <div class="card-panel-inner censorship-control-box">
+                <div class="form-field checkbox-field" id="portadaCheckboxField">
+                  <label class="checkbox-label" for="articleIsPortada">
+                    <input type="checkbox" id="articleIsPortada" />
+                    <div>
+                      <strong><i class="fa-solid fa-thumbtack"></i> Fijar como Noticia Principal</strong>
+                      <p class="form-hint" style="margin: 2px 0 0;">Esta noticia aparecerá en grande al inicio del portal para todos los usuarios. También será la que vean los visitantes sin sesión con el desenfoque configurado.</p>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="censorship-header">
+                  <div>
+                    <h5><i class="fa-solid fa-eye-slash"></i> Nivel de Censura para Invitados (Desenfoque / Blur)</h5>
+                    <p>Gradúa qué porcentaje del texto permanece visible antes del corte borroso.</p>
+                  </div>
+                  <span class="blur-level-badge" id="articleBlurPercentBadge">30% Visible</span>
+                </div>
+
+                <div class="slider-wrapper">
+                  <input type="range" id="articleBlurSlider" min="10" max="90" step="5" value="30" class="range-slider" />
+                  <div class="slider-labels">
+                    <span>10% (Corte temprano)</span>
+                    <span>50% (Medio)</span>
+                    <span>90% (Corte tardío)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-footer" style="padding-top: 1rem;">
+                <button type="button" class="btn btn-outline" id="btnCancelArticle">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" id="btnSaveArticle">
+                  Guardar Noticia
+                </button>
+              </div>
+            </form>
+
+            <!-- Columna Derecha: Vista Previa en Vivo -->
+            <div class="editor-preview-pane">
+              <div class="preview-header">
+                <h5><i class="fa-solid fa-laptop-code"></i> Vista Previa en Vivo</h5>
+                <div class="preview-toggle-tabs">
+                  <button class="preview-tab-btn active" id="btnModalPreviewGuest" type="button">
+                    <i class="fa-solid fa-lock"></i> Como Invitado (Con Blur)
+                  </button>
+                  <button class="preview-tab-btn" id="btnModalPreviewAuth" type="button">
+                    <i class="fa-solid fa-unlock"></i> Con Sesión (Completa)
+                  </button>
+                </div>
+              </div>
+
+              <div class="preview-stage" id="articleModalLivePreview">
+                <!-- Renderizado dinámico en tiempo real -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: INICIAR SESIÓN -->
+    <div class="modal-backdrop" id="modalLogin">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeLoginModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3>
+              <i class="fa-solid fa-arrow-right-to-bracket"></i> Iniciar Sesión
+            </h3>
+            <p class="modal-subtitle">
+              Accede a tu cuenta institucional o de lector.
+            </p>
+          </div>
+          <form id="loginForm" class="modal-body">
+            <div class="form-field">
+              <label for="loginEmail">Correo Institucional / Personal</label>
+              <input
+                type="email"
+                id="loginEmail"
+                class="form-input"
+                required
+                placeholder="tu@correo.com"
+              />
+            </div>
+            <div class="form-field">
+              <div class="label-row">
+                <label for="loginPassword">Contraseña</label>
+                <a href="#" class="link-small" id="btnForgotPassOpen"
+                  >¿Olvidaste tu contraseña?</a
+                >
+              </div>
+              <input
+                type="password"
+                id="loginPassword"
+                class="form-input"
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            <button
+              type="submit"
+              class="btn btn-primary btn-block"
+              id="btnLoginSubmit"
+            >
+              Ingresar al Sistema
+            </button>
+          </form>
+          <div class="modal-footer-text">
+            <p>
+              ¿No tienes una cuenta?
+              <a href="#" id="linkGoToRegister" class="text-link"
+                >Regístrate aquí</a
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: REGISTRO DE USUARIO -->
+    <div class="modal-backdrop" id="modalRegister">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeRegisterModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-user-plus"></i> Registro de Usuario</h3>
+            <p class="modal-subtitle">
+              Crea tu cuenta como Lector en el portal.
+            </p>
+          </div>
+          <form id="registerForm" class="modal-body">
+            <div class="form-field">
+              <label for="regName"
+                >Nombre Completo <span class="required">*</span></label
+              >
+              <input
+                type="text"
+                id="regName"
+                class="form-input"
+                required
+                placeholder="Ej: Carlos Mendoza"
+              />
+            </div>
+            <div class="form-field">
+              <label for="regEmail"
+                >Correo Electrónico <span class="required">*</span></label
+              >
+              <input
+                type="email"
+                id="regEmail"
+                class="form-input"
+                required
+                placeholder="carlos@ejemplo.com"
+              />
+            </div>
+            <div class="form-field">
+              <label for="regPassword"
+                >Contraseña (Mínimo 6 caracteres)
+                <span class="required">*</span></label
+              >
+              <input
+                type="password"
+                id="regPassword"
+                class="form-input"
+                minlength="6"
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            <button
+              type="submit"
+              class="btn btn-primary btn-block"
+              id="btnRegisterSubmit"
+            >
+              Crear Cuenta
+            </button>
+          </form>
+          <div class="modal-footer-text">
+            <p>
+              ¿Ya tienes cuenta?
+              <a href="#" id="linkGoToLogin" class="text-link">Inicia sesión</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: RECUPERACIÓN DE CONTRASEÑA (ENVÍO REAL POR CORREO) -->
+    <div class="modal-backdrop" id="modalForgotPass">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeForgotModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3>
+              <i class="fa-solid fa-envelope-open-text"></i> Recuperación de
+              Contraseña
+            </h3>
+            <p class="modal-subtitle" id="forgotSubtitle">
+              Ingresa tu correo para recibir un código de verificación.
+            </p>
+          </div>
+          <form id="forgotPassForm" class="modal-body">
+            <div class="form-field" id="forgotEmailField">
+              <label for="forgotEmail">Correo Electrónico Registrado</label>
+              <input
+                type="email"
+                id="forgotEmail"
+                class="form-input"
+                required
+                placeholder="tu@correo.com"
+              />
+            </div>
+
+            <div id="resetFieldsGroup" style="display: none">
+              <div class="alert-info" id="emailSentAlert">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span
+                  >Te enviamos un código de 6 dígitos a tu correo. Revisa tu
+                  bandeja de entrada o spam.</span
+                >
+              </div>
+              <div class="form-field">
+                <label for="resetCode">Código de 6 Dígitos</label>
+                <input
+                  type="text"
+                  id="resetCode"
+                  class="form-input text-center font-mono"
+                  maxlength="6"
+                  placeholder="123456"
+                />
+              </div>
+              <div class="form-field">
+                <label for="resetNewPass">Nueva Contraseña</label>
+                <input
+                  type="password"
+                  id="resetNewPass"
+                  class="form-input"
+                  minlength="6"
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+              <div class="form-field">
+                <label for="resetConfirmPass">Confirmar Nueva Contraseña</label>
+                <input
+                  type="password"
+                  id="resetConfirmPass"
+                  class="form-input"
+                  minlength="6"
+                  placeholder="Repite la nueva contraseña"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary btn-block"
+              id="btnForgotSubmit"
+            >
+              Enviar Código por Correo
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CAMBIO DE CONTRASEÑA (USUARIO AUTENTICADO) -->
+    <div class="modal-backdrop" id="modalChangePass">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeChangePassModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-key"></i> Cambiar Contraseña</h3>
+            <p class="modal-subtitle">
+              Actualiza tu clave de acceso de forma segura.
+            </p>
+          </div>
+          <form id="changePassForm" class="modal-body">
+            <div class="form-field">
+              <label for="currentPassword"
+                >Contraseña Actual <span class="required">*</span></label
+              >
+              <input
+                type="password"
+                id="currentPassword"
+                class="form-input"
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            <div class="form-field">
+              <label for="newPassword"
+                >Nueva Contraseña <span class="required">*</span></label
+              >
+              <input
+                type="password"
+                id="newPassword"
+                class="form-input"
+                minlength="6"
+                required
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+            <div class="form-field">
+              <label for="confirmNewPassword"
+                >Confirmar Nueva Contraseña
+                <span class="required">*</span></label
+              >
+              <input
+                type="password"
+                id="confirmNewPassword"
+                class="form-input"
+                minlength="6"
+                required
+                placeholder="Repite la nueva contraseña"
+              />
+            </div>
+            <button
+              type="submit"
+              class="btn btn-primary btn-block"
+              id="btnChangePassSubmit"
+            >
+              Actualizar Contraseña
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CREAR NUEVO ROL -->
+    <div class="modal-backdrop" id="modalCreateRole">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeRoleModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-shield"></i> Crear Rol</h3>
+            <p class="modal-subtitle">
+              Define un nuevo rol con permisos personalizados.
+            </p>
+          </div>
+          <form id="createRoleForm" class="modal-body">
+            <div class="form-field">
+              <label for="roleName"
+                >Nombre del Rol <span class="required">*</span></label
+              >
+              <input
+                type="text"
+                id="roleName"
+                class="form-input"
+                required
+                placeholder="Ej: Revisor, Moderador"
+              />
+            </div>
+            <div class="form-field">
+              <label for="roleDesc">Descripción</label>
+              <input
+                type="text"
+                id="roleDesc"
+                class="form-input"
+                placeholder="Alcance y responsabilidades"
+              />
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" id="btnCancelRole">
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary" id="btnSaveRole">
+                Guardar Rol
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: LABORATORIO Y DEMOSTRACIÓN CRIPTOGRÁFICA (UNACH) -->
+    <div class="modal-backdrop" id="modalCryptoDemo">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <button class="modal-close" id="closeCryptoDemoModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <div class="crypto-modal-title-group">
+              <span class="badge badge-primary"><i class="fa-solid fa-shield-halved"></i> Ciberseguridad & Criptografía</span>
+              <h3>Laboratorio de Mecanismos Criptográficos</h3>
+            </div>
+            <p class="modal-subtitle">
+              Demostración interactiva en vivo de los dos mecanismos criptográficos integrados en la aplicación (Cifrado Simétrico AES-256-GCM y Firma Asimétrica RSA-SHA256).
+            </p>
+          </div>
+
+          <!-- Pestañas del Laboratorio -->
+          <div class="admin-nav-tabs crypto-tabs">
+            <button class="admin-tab active" data-cryptotab="tabCryptoSymmetric" id="btnTabCryptoSym">
+              <i class="fa-solid fa-key"></i> 1. Cifrado Simétrico (AES-256-GCM)
+            </button>
+            <button class="admin-tab" data-cryptotab="tabCryptoAsymmetric" id="btnTabCryptoAsym">
+              <i class="fa-solid fa-signature"></i> 2. Firma Asimétrica (RSA-SHA256)
+            </button>
+            <button class="admin-tab" data-cryptotab="tabCryptoDocs" id="btnTabCryptoDoc">
+              <i class="fa-solid fa-book-bookmark"></i> 3. Rúbrica y Especificaciones
+            </button>
+          </div>
+
+          <div class="modal-body crypto-modal-body">
+            <!-- TAB 1: CIFRADO SIMÉTRICO -->
+            <div class="crypto-tab-pane active" id="tabCryptoSymmetric">
+              <div class="crypto-intro-box">
+                <div class="crypto-intro-icon"><i class="fa-solid fa-lock"></i></div>
+                <div>
+                  <h4>Cifrado Simétrico en Reposo con AES-256-GCM</h4>
+                  <p>
+                    Protección de campos sensibles en la base de datos (notas confidenciales y fuentes periodísticas).
+                    Utiliza la librería nativa <code>node:crypto</code> con una llave de 256 bits configurada en <code>CRYPTO_AES_KEY</code> (.env).
+                  </p>
+                </div>
+              </div>
+
+              <!-- Simulador en vivo -->
+              <div class="card-panel-inner" style="margin-bottom: 1.5rem;">
+                <h5><i class="fa-solid fa-terminal"></i> Simulador Interactivo de Cifrado y Descifrado</h5>
+                <p class="form-hint">Escribe cualquier texto confidencial para ver cómo la librería procesa el IV, Auth Tag y Ciphertext en tiempo real:</p>
+                <div class="crypto-sim-form">
+                  <div class="form-field">
+                    <input type="text" id="cryptoSimInput" class="form-input" placeholder="Ej: Testigo protegido: Lic. Morales, informe confidencial #2026-X" value="Fuente confidencial reservada: Informe de auditoría interna #UNACH-2026" />
+                  </div>
+                  <button type="button" class="btn btn-primary" id="btnRunCryptoSim">
+                    <i class="fa-solid fa-play"></i> Ejecutar Flujo Criptográfico
+                  </button>
+                </div>
+
+                <div class="crypto-sim-output" id="cryptoSimOutput" style="display: none; margin-top: 1rem;">
+                  <!-- Salida dinámica -->
+                </div>
+              </div>
+
+              <!-- Tabla Comparativa BD vs Aplicación -->
+              <div class="card-panel-inner">
+                <div class="raw-db-header-bar">
+                  <h5><i class="fa-solid fa-database"></i> Datos Reales en Base de Datos: Antes vs. Después del Cifrado</h5>
+                  <button type="button" class="btn btn-sm btn-outline" id="btnRefreshCryptoTable">
+                    <i class="fa-solid fa-rotate-right"></i> Actualizar Datos
+                  </button>
+                </div>
+                <p class="form-hint">Demostración del flujo completo: El dato entra en claro, se almacena cifrado en la base de datos, y se descifra para el usuario con sesión:</p>
+                
+                <div class="table-container" style="max-height: 280px; overflow-y: auto;">
+                  <table class="data-table crypto-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th style="width: 220px;">Título de Noticia</th>
+                        <th>Almacenado en BD (Cifrado AES-256-GCM)</th>
+                        <th>Descifrado en App (Texto en Claro)</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cryptoDbTableBody">
+                      <!-- Filas dinámicas -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 2: FIRMA ASIMÉTRICA -->
+            <div class="crypto-tab-pane" id="tabCryptoAsymmetric" style="display: none;">
+              <div class="crypto-intro-box">
+                <div class="crypto-intro-icon"><i class="fa-solid fa-file-shield"></i></div>
+                <div>
+                  <h4>Firma Digital Asimétrica con RSA-2048 y SHA-256</h4>
+                  <p>
+                    Garantía de integridad y autenticidad para cada noticia publicada.
+                    El servidor firma con su <strong>Llave Privada</strong> (<code>portal-private.pem</code>) y cualquier persona puede verificar la autenticidad con la <strong>Llave Pública</strong> (<code>portal-public.pem</code>).
+                  </p>
+                </div>
+              </div>
+
+              <!-- Visor de Llave Pública -->
+              <div class="card-panel-inner" style="margin-bottom: 1.5rem;">
+                <div class="raw-db-header-bar">
+                  <h5><i class="fa-solid fa-key"></i> Llave Pública Oficial del Portal (RSA 2048 bits)</h5>
+                  <span class="badge badge-success"><i class="fa-solid fa-check"></i> Activa en el Servidor</span>
+                </div>
+                <div class="key-fingerprint-box">
+                  <strong>Huella Digital (Fingerprint SHA-256):</strong>
+                  <code id="cryptoPublicKeyFingerprint">Cargando...</code>
+                </div>
+                <pre class="public-key-pem" id="cryptoPublicKeyPem">Cargando clave pública...</pre>
+              </div>
+
+              <!-- Verificador de Noticias y Prueba de Tampering -->
+              <div class="card-panel-inner">
+                <h5><i class="fa-solid fa-vial-virus"></i> Prueba de Detección de Tampering (Integridad en Vivo)</h5>
+                <p class="form-hint">Selecciona una noticia para comprobar su firma válida o simular una alteración no autorizada del contenido:</p>
+                
+                <div class="tamper-control-grid">
+                  <div class="form-field">
+                    <label for="tamperNewsSelect">Seleccionar Noticia:</label>
+                    <select id="tamperNewsSelect" class="form-input"></select>
+                  </div>
+                  <div class="tamper-btn-group">
+                    <button type="button" class="btn btn-outline" id="btnVerifySelectedNews">
+                      <i class="fa-solid fa-shield-check"></i> Verificar Firma Original
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btnTamperSelectedNews">
+                      <i class="fa-solid fa-triangle-exclamation"></i> Inyectar Alteración (Tamper)
+                    </button>
+                  </div>
+                </div>
+
+                <div class="tamper-result-stage" id="tamperResultStage" style="display: none; margin-top: 1rem;">
+                  <!-- Resultado dinámico de tampering -->
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 3: DOCUMENTACIÓN Y RÚBRICA -->
+            <div class="crypto-tab-pane" id="tabCryptoDocs" style="display: none;">
+              <div class="card-panel-inner">
+                <h4><i class="fa-solid fa-graduation-cap"></i> Cumplimiento de Requisitos de la Práctica</h4>
+                
+                <div class="crypto-req-card">
+                  <h5>1. Cifrado Simétrico aplicado a datos de la aplicación</h5>
+                  <ul>
+                    <li><strong>Algoritmo implementado:</strong> AES-256-GCM (Advanced Encryption Standard con Galois/Counter Mode).</li>
+                    <li><strong>Librería:</strong> <code>node:crypto</code> (librería criptográfica estándar y nativa de Node.js basada en OpenSSL 3).</li>
+                    <li><strong>Almacenamiento de Llave:</strong> Variable de entorno <code>CRYPTO_AES_KEY</code> en el archivo <code>.env</code> (clave de 256 bits en hexadecimal). No está hardcodeada en el código fuente.</li>
+                    <li><strong>Flujo completo demostrado:</strong> El texto sensible entra en claro por formulario/API, se cifra con un IV aleatorio de 12 bytes y Auth Tag de 16 bytes, se guarda cifrado en formato <code>iv:authTag:ciphertext</code>, y se descifra para usuarios con permiso.</li>
+                  </ul>
+                </div>
+
+                <div class="crypto-req-card" style="margin-top: 1rem;">
+                  <h5>2. Cifrado / Firma Asimétrica aplicada a una función</h5>
+                  <ul>
+                    <li><strong>Algoritmo implementado:</strong> RSA-SHA256 (Longitud de clave de 2048 bits).</li>
+                    <li><strong>Librería:</strong> <code>node:crypto</code> (módulo nativo).</li>
+                    <li><strong>Almacenamiento de Llaves:</strong>
+                      <ul>
+                        <li>Llave Privada: Archivo protegido <code>certs/portal-private.pem</code> con permisos de solo lectura para el proceso del servidor (ruta en <code>PORTAL_PRIVATE_KEY_PATH</code>).</li>
+                        <li>Llave Pública: Archivo <code>certs/portal-public.pem</code> accesible públicamente vía API <code>/api/crypto/public-key</code> para verificación ciudadana (ruta en <code>PORTAL_PUBLIC_KEY_PATH</code>).</li>
+                      </ul>
+                    </li>
+                    <li><strong>Caso Real:</strong> Firma digital y sello de autenticidad e integridad de noticias y comunicados periodísticos. Permite detectar de inmediato si un registro de la base de datos fue manipulado por un tercero.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="btnCloseCryptoDemoFooter">
+              Cerrar Laboratorio
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenedor de Toasts -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Pie de Página -->
+    <footer class="site-footer">
+      <div class="container footer-content">
+        <div class="footer-brand-block">
+          <strong>Portal de Noticias • Universidad Autónoma de Chiapas</strong>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/news.js"></script>
+    <script src="js/crypto-lab.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
