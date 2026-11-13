@@ -30,7 +30,9 @@ copy .env.example .env    # Windows
 Las llaves se escriben en `keys/jwt-private.pem` (modo `0600`) y
 `keys/jwt-public.pem`. Esa carpeta está en `.gitignore`: **las llaves nunca se
 suben al repositorio**. Para volver a generarlas (invalida todos los tokens ya
-emitidos) usa `npm run keys -- --force`.
+emitidos) usa `npm run keys -- --force`. Si las regeneras, las firmas de las
+noticias ya guardadas dejan de validar: en desarrollo borra `database.sqlite`
+para que el seed se cree y se firme con las llaves nuevas.
 
 En `.env`, genera una llave simétrica propia para los datos cifrados y define las
 contraseñas de los tres usuarios iniciales (`DEFAULT_*_PASSWORD`):
@@ -80,6 +82,25 @@ El script muestra el RFC de un usuario de prueba en claro, el valor cifrado real
 leído de la base de datos SQLite, el descifrado, y un token de acceso RS256 con
 su encabezado, verificación con la llave pública y rechazo de una versión
 alterada. Solo usa datos inventados.
+
+Para el mecanismo asimétrico con una noticia **real** de la base de datos:
+
+```bash
+npm run demo:asimetrico
+```
+
+Muestra las dos llaves, el payload canónico, la firma guardada en
+`noticias.firma_digital`, la verificación válida, la misma verificación tras
+alterar el título y el rechazo de un token JWT manipulado. También puedes abrir
+cualquier noticia en la interfaz y usar los botones “Verificar Firma con Llave
+Pública” y “Probar Detección de Alteración”.
+
+Si prefieres un ejemplo mínimo, sin base de datos y en el mismo formato que la
+demo del perfil (texto en claro → firma guardada → verificación), usa:
+
+```bash
+npm run demo:firma
+```
 
 ## HTTPS
 

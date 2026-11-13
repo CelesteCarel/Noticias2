@@ -79,9 +79,48 @@ servidor registra `la autenticación GCM falló`. Vuelve a guardar el RFC para
 restaurarlo. Esto demuestra que GCM detecta manipulación, no solo
 confidencialidad.
 
-## 2. Demostración del token RS256 (2 min)
+## 2. Demostración del mecanismo asimétrico (4 min)
 
-Con el servidor corriendo, en PowerShell:
+### Opción A — en la app, con una noticia real (recomendada)
+
+1. Inicia sesión con cualquier rol y haz clic en una noticia para abrir el lector.
+2. Baja al panel **“Garantías Criptográficas de la Publicación”**.
+3. Clic en **“Verificar Firma con Llave Pública”**: aparece *FIRMA DIGITAL VÁLIDA*,
+   el algoritmo (`RSA-SHA256`, 3072 bits) y la huella SHA-256 de la llave pública.
+4. Clic en **“Probar Detección de Alteración”**: aparece *ALTERACIÓN DETECTADA*.
+   Aclara que la noticia original **no** se modificó: la alteración fue en memoria.
+5. Si la noticia trae nota confidencial, el bloque inferior muestra el texto en
+   claro y el botón “Ver cómo está guardado en BD” enseña el valor cifrado.
+
+Frase: *“El servidor firmó esta noticia con la llave privada al publicarla.
+Al cambiar una sola letra, el texto firmado deja de coincidir y la llave pública
+rechaza la firma: la alteración se detecta aunque el atacante tenga la base de
+datos completa.”*
+
+### Opción B — scripts dedicados
+
+Ejemplo mínimo, sin base de datos (el más parecido a la demo del perfil):
+crea una noticia en memoria, la firma, muestra la firma como se guardaría en la
+BD, la verifica, cambia una letra y comprueba que la firma deja de ser válida.
+
+```powershell
+npm run demo:firma
+```
+
+Con una noticia **real** de SQLite:
+
+```powershell
+npm run demo:asimetrico
+```
+
+Recorre cinco bloques: las dos llaves y la huella de la pública; el payload
+canónico y la firma real guardada en `noticias.firma_digital`; la verificación
+válida; la misma verificación tras alterar el título (inválida); y que otra
+llave pública distinta no valida la firma. Termina con el token JWT.
+
+### Opción C — el token de tu sesión real (PowerShell)
+
+Con el servidor corriendo:
 
 ```powershell
 $body = @{ email = 'lector@portalnoticias.com'; password = 'Usuario12345!' } | ConvertTo-Json
@@ -189,6 +228,7 @@ temporales: no modifican `.env`, `keys/` ni `database.sqlite`.
 | `No se pudo descifrar... GCM falló` en datos viejos | Se cambió la llave o el par RSA: borra `database.sqlite` para que se regenere el seed |
 | El puerto 3000 está ocupado | `$env:PORT='3100'; npm start` |
 | El navegador muestra el perfil vacío | Vuelve a guardar los datos en “Mi perfil” |
+| “Verificar firma” muestra inválida en noticias de ejemplo | Se cambiaron las llaves después de crear la BD: borra `database.sqlite` y arranca de nuevo para regenerar el seed firmado con las llaves actuales |
 
 ## 7. Qué no mostrar
 

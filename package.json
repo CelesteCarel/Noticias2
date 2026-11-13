@@ -9,6 +9,8 @@
     "certs": "node --no-warnings scripts/generate-certs.js",
     "keys": "node --no-warnings scripts/generate-jwt-keys.js",
     "demo": "node --no-warnings scripts/demo-cripto.js",
+    "demo:asimetrico": "node --no-warnings scripts/demo-asimetrico.js",
+    "demo:firma": "node --no-warnings scripts/demo-firma.js",
     "test": "node --no-warnings test/crypto.test.js && node --no-warnings test/config.test.js && node --no-warnings test/api.test.js",
     "test:crypto": "node --no-warnings test/crypto.test.js",
     "test:api": "node --no-warnings test/api.test.js",
