@@ -62,6 +62,34 @@ const Auth = {
     }
   },
 
+  async loadProfile() {
+    try {
+      const data = await API.get('/auth/me');
+      this.currentUser = data.user;
+      this.currentPermissions = data.permissions || [];
+      this.updateAuthUI();
+      return data.user;
+    } catch (error) {
+      showToast(error.message || 'No se pudo cargar tu perfil', 'error');
+      return null;
+    }
+  },
+
+  async updateProfile(perfil) {
+    try {
+      const data = await API.put('/auth/perfil', perfil);
+      if (data.user) {
+        this.currentUser = { ...this.currentUser, ...data.user };
+        this.updateAuthUI();
+      }
+      showToast(data.message || 'Perfil actualizado correctamente', 'success');
+      return data;
+    } catch (error) {
+      showToast(error.message || 'No se pudo actualizar el perfil', 'error');
+      throw error;
+    }
+  },
+
   async changePassword(currentPassword, newPassword) {
     try {
       const data = await API.post('/auth/change-password', { currentPassword, newPassword });

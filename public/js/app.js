@@ -110,6 +110,37 @@ const App = {
     if (btnOpenChangePass) {
       btnOpenChangePass.addEventListener('click', () => this.openModal('modalChangePass'));
     }
+
+    const btnOpenProfile = document.getElementById('btnOpenProfile');
+    if (btnOpenProfile) {
+      btnOpenProfile.addEventListener('click', () => this.openProfileModal());
+    }
+  },
+
+  async openProfileModal() {
+    const message = document.getElementById('profileFormMessage');
+    if (message) {
+      message.hidden = true;
+      message.textContent = '';
+      message.className = 'profile-form-message';
+    }
+
+    this.openModal('modalProfile');
+    const user = await Auth.loadProfile();
+    if (!user) return;
+
+    const setValue = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.value = value || '';
+    };
+
+    const name = document.getElementById('profileNameDisplay');
+    const email = document.getElementById('profileEmailDisplay');
+    if (name) name.textContent = user.nombre || '—';
+    if (email) email.textContent = user.email || '—';
+    setValue('profilePhone', user.telefono);
+    setValue('profileRfc', user.rfc);
+    setValue('profileAddress', user.direccion);
   },
 
   bindAuthEvents() {
@@ -232,6 +263,49 @@ const App = {
       });
     }
 
+    // Formulario de Datos de Contacto del Perfil (se cifran en el servidor)
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+      profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const telefono = document.getElementById('profilePhone').value.trim();
+        const rfc = document.getElementById('profileRfc').value.trim();
+        const direccion = document.getElementById('profileAddress').value.trim();
+        const message = document.getElementById('profileFormMessage');
+        const submitBtn = document.getElementById('btnSaveProfile');
+
+        const showMessage = (texto, tipo) => {
+          if (!message) return;
+          message.textContent = texto;
+          message.className = `profile-form-message is-${tipo}`;
+          message.hidden = false;
+        };
+
+        if (telefono && !/^\d{10}$/.test(telefono)) {
+          showMessage('El teléfono debe tener exactamente 10 dígitos.', 'error');
+          return;
+        }
+        if (rfc && !/^[A-Za-z0-9]{12,13}$/.test(rfc)) {
+          showMessage('El RFC debe tener 12 o 13 caracteres alfanuméricos.', 'error');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+
+        try {
+          await Auth.updateProfile({ telefono, rfc, direccion });
+          showMessage('Datos guardados y cifrados correctamente.', 'success');
+        } catch (error) {
+          showMessage(error.message || 'No se pudo guardar el perfil.', 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Guardar Datos de Contacto';
+        }
+      });
+    }
+
     // Formulario de Recuperación de Contraseña (Flujo Real de 2 Pasos)
     const forgotPassForm = document.getElementById('forgotPassForm');
     if (forgotPassForm) {
@@ -311,6 +385,7 @@ const App = {
       { btn: 'closeRegisterModal', modal: 'modalRegister' },
       { btn: 'closeForgotModal', modal: 'modalForgotPass' },
       { btn: 'closeChangePassModal', modal: 'modalChangePass' },
+      { btn: 'closeProfileModal', modal: 'modalProfile' },
       { btn: 'closeRoleModal', modal: 'modalCreateRole' },
       { btn: 'btnCancelRole', modal: 'modalCreateRole' }
     ];

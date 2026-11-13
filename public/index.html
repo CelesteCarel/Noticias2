@@ -112,6 +112,13 @@
               </div>
               <button
                 class="btn-profile-action"
+                id="btnOpenProfile"
+                title="Mi perfil"
+              >
+                <i class="fa-solid fa-id-card"></i>
+              </button>
+              <button
+                class="btn-profile-action"
                 id="btnOpenChangePass"
                 title="Cambiar Contraseña"
               >
@@ -945,6 +952,87 @@
               id="btnChangePassSubmit"
             >
               Actualizar Contraseña
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: MI PERFIL (DATOS DE CONTACTO CIFRADOS) -->
+    <div class="modal-backdrop" id="modalProfile">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <button class="modal-close" id="closeProfileModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-id-card"></i> Mi Perfil</h3>
+            <p class="modal-subtitle">
+              Tus datos de contacto se guardan cifrados con AES-256-GCM.
+            </p>
+          </div>
+          <form id="profileForm" class="modal-body">
+            <div class="profile-readonly">
+              <div>
+                <span class="profile-readonly-label">Nombre</span>
+                <strong id="profileNameDisplay">—</strong>
+              </div>
+              <div>
+                <span class="profile-readonly-label">Correo</span>
+                <strong id="profileEmailDisplay">—</strong>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label for="profilePhone">Teléfono</label>
+                <input
+                  type="tel"
+                  id="profilePhone"
+                  class="form-input"
+                  inputmode="numeric"
+                  maxlength="10"
+                  pattern="[0-9]{10}"
+                  placeholder="10 dígitos"
+                />
+              </div>
+              <div class="form-field">
+                <label for="profileRfc">RFC</label>
+                <input
+                  type="text"
+                  id="profileRfc"
+                  class="form-input"
+                  maxlength="13"
+                  pattern="[A-Za-z0-9]{12,13}"
+                  placeholder="12 o 13 caracteres"
+                />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="profileAddress">Dirección</label>
+              <input
+                type="text"
+                id="profileAddress"
+                class="form-input"
+                maxlength="200"
+                placeholder="Calle, número, colonia y ciudad"
+              />
+            </div>
+
+            <p class="form-hint">
+              <i class="fa-solid fa-lock"></i>
+              El teléfono, el RFC y la dirección se cifran antes de guardarse en la base de datos. Solo tú los ves en claro.
+            </p>
+
+            <div class="profile-form-message" id="profileFormMessage" role="status" hidden></div>
+
+            <button
+              type="submit"
+              class="btn btn-primary btn-block"
+              id="btnSaveProfile"
+            >
+              Guardar Datos de Contacto
             </button>
           </form>
         </div>

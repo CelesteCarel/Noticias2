@@ -24,11 +24,31 @@ const {
   MAX_NOMBRE
 } = require('../middleware/sanitizer');
 const emailService = require('../services/email.service');
+const { encrypt, decrypt } = require('../utils/crypto');
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 const BCRYPT_SALT_ROUNDS = 12;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+const MAX_DIRECCION = 200;
+const RFC_REGEX = /^[A-Z0-9]{12,13}$/;
+const TELEFONO_REGEX = /^\d{10}$/;
+
+/**
+ * Descifra un campo de perfil sin tumbar la respuesta completa si un registro
+ * antiguo o corrupto no cumple el formato v1. El detalle del error queda en el
+ * servidor, nunca en la respuesta al cliente.
+ */
+function decryptProfileField(valor, campo, userId) {
+  if (!valor) return '';
+  try {
+    return decrypt(valor);
+  } catch (error) {
+    console.error(`No se pudo descifrar ${campo} del usuario ${userId}: ${error.message}`);
+    return '';
+  }
+}
 
 // Aplicar sanitización a todas las rutas de autenticación
 router.use(sanitizeInput);
@@ -270,12 +290,111 @@ router.post('/refresh', (req, res) => {
 
 /**
  * 4. Obtener perfil de usuario actual
+ *
+ * Los datos de contacto se guardan cifrados en la base de datos y solo se
+ * descifran aquí, para el propio usuario autenticado.
  */
 router.get('/me', authenticateToken, (req, res) => {
-  res.json({
-    user: req.user,
-    permissions: getUserPermissions(req.user.id_rol)
-  });
+  try {
+    const row = db.prepare(`
+      SELECT u.id, u.nombre, u.email, u.id_rol, u.telefono, u.rfc, u.direccion,
+             r.nombre_rol
+      FROM usuarios u
+      JOIN roles r ON u.id_rol = r.id
+      WHERE u.id = ?
+    `).get(req.user.id);
+
+    if (!row) {
+      return res.status(401).json({ error: 'Sesión no válida. Inicia sesión nuevamente.' });
+    }
+
+    res.json({
+      user: {
+        id: row.id,
+        nombre: row.nombre,
+        email: row.email,
+        id_rol: row.id_rol,
+        nombre_rol: row.nombre_rol,
+        telefono: decryptProfileField(row.telefono, 'telefono', row.id),
+        rfc: decryptProfileField(row.rfc, 'rfc', row.id),
+        direccion: decryptProfileField(row.direccion, 'direccion', row.id)
+      },
+      permissions: getUserPermissions(row.id_rol)
+    });
+  } catch (error) {
+    console.error('Error al consultar el perfil:', error.message);
+    res.status(500).json({ error: 'Error interno al consultar el perfil' });
+  }
+});
+
+/**
+ * 4.1 Actualizar los datos de contacto del perfil.
+ *
+ * El dato entra en claro, se valida, se cifra con AES-256-GCM y se guarda en la
+ * base de datos. La auditoría registra qué campos cambiaron, nunca sus valores.
+ */
+router.put('/perfil', authenticateToken, (req, res) => {
+  const ip = getClientIp(req);
+
+  const telefono = typeof req.body.telefono === 'string' ? req.body.telefono.trim() : '';
+  const rfc = typeof req.body.rfc === 'string' ? req.body.rfc.trim().toUpperCase() : '';
+  const direccion = typeof req.body.direccion === 'string' ? req.body.direccion.trim() : '';
+
+  if (telefono && !TELEFONO_REGEX.test(telefono)) {
+    return res.status(400).json({ error: 'El teléfono debe tener exactamente 10 dígitos' });
+  }
+
+  if (rfc && !RFC_REGEX.test(rfc)) {
+    return res.status(400).json({ error: 'El RFC debe tener 12 o 13 caracteres alfanuméricos' });
+  }
+
+  if (direccion.length > MAX_DIRECCION) {
+    return res.status(400).json({ error: `La dirección no puede exceder ${MAX_DIRECCION} caracteres` });
+  }
+
+  try {
+    // Un campo vacío se guarda como NULL en vez de almacenar el cifrado de una
+    // cadena vacía.
+    const telefonoCifrado = telefono ? encrypt(telefono) : null;
+    const rfcCifrado = rfc ? encrypt(rfc) : null;
+    const direccionCifrada = direccion ? encrypt(direccion) : null;
+
+    db.prepare(`
+      UPDATE usuarios
+      SET telefono = ?, rfc = ?, direccion = ?
+      WHERE id = ?
+    `).run(telefonoCifrado, rfcCifrado, direccionCifrada, req.user.id);
+
+    const campos = [
+      telefono ? 'teléfono' : null,
+      rfc ? 'RFC' : null,
+      direccion ? 'dirección' : null
+    ].filter(Boolean);
+
+    logAudit(
+      req.user.id,
+      'Actualización de Perfil',
+      `Datos de contacto actualizados y cifrados${campos.length ? `: ${campos.join(', ')}` : ' (campos vaciados)'}`,
+      ip
+    );
+
+    res.json({
+      message: 'Perfil actualizado. Los datos de contacto quedaron cifrados en la base de datos.',
+      user: {
+        id: req.user.id,
+        nombre: req.user.nombre,
+        email: req.user.email,
+        id_rol: req.user.id_rol,
+        nombre_rol: req.user.nombre_rol,
+        telefono,
+        rfc,
+        direccion
+      }
+    });
+  } catch (error) {
+    console.error('Error al actualizar el perfil:', error.message);
+    res.status(500).json({ error: 'Error interno al actualizar el perfil' });
+  }
 });
 
 /**
