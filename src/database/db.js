@@ -86,6 +86,15 @@ function migrateColumns() {
   if (!columns.includes('codigo_expira')) {
     db.exec('ALTER TABLE usuarios ADD COLUMN codigo_expira DATETIME;');
   }
+  if (!columns.includes('telefono')) {
+    db.exec('ALTER TABLE usuarios ADD COLUMN telefono TEXT;');
+  }
+  if (!columns.includes('rfc')) {
+    db.exec('ALTER TABLE usuarios ADD COLUMN rfc TEXT;');
+  }
+  if (!columns.includes('direccion')) {
+    db.exec('ALTER TABLE usuarios ADD COLUMN direccion TEXT;');
+  }
 
   // Asegurar columnas en la tabla de noticias
   const notColumns = db.prepare('PRAGMA table_info(noticias)').all().map(c => c.name);

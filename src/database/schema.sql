@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS usuarios (
     bloqueado_hasta DATETIME,
     codigo_recuperacion TEXT,
     codigo_expira DATETIME,
+    telefono TEXT,                -- Cifrado simétrico AES-256-GCM (formato v1:iv:tag:datos)
+    rfc TEXT,                     -- Cifrado simétrico AES-256-GCM (formato v1:iv:tag:datos)
+    direccion TEXT,               -- Cifrado simétrico AES-256-GCM (formato v1:iv:tag:datos)
     FOREIGN KEY (id_rol) REFERENCES roles(id)
 );
 
