@@ -7,7 +7,9 @@
     "start": "node --no-warnings server.js",
     "dev": "node --no-warnings --watch server.js",
     "certs": "node --no-warnings scripts/generate-certs.js",
-    "test": "node --no-warnings test/crypto.test.js && node --no-warnings test/config.test.js",
+    "keys": "node --no-warnings scripts/generate-jwt-keys.js",
+    "demo": "node --no-warnings scripts/demo-cripto.js",
+    "test": "node --no-warnings test/crypto.test.js && node --no-warnings test/config.test.js && node --no-warnings test/api.test.js",
     "test:crypto": "node --no-warnings test/crypto.test.js",
     "test:api": "node --no-warnings test/api.test.js",
     "test:config": "node --no-warnings test/config.test.js"

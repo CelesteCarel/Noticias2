@@ -1,64 +1,58 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const db = require('../database/db');
 
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-
 /**
- * Valores de ejemplo publicados en .env.example. Aceptarlos equivaldría a usar
- * una clave que cualquiera que clone el repositorio conoce, por lo que se
- * rechazan tanto en desarrollo como en producción.
+ * Llaves asimétricas para firmar y verificar los access tokens (RS256).
+ *
+ * La llave privada nunca se versiona: se genera con `npm run keys` y su ruta se
+ * indica con JWT_PRIVATE_KEY_PATH. La pública (JWT_PUBLIC_KEY_PATH) permite
+ * verificar la firma sin poseer la privada.
  */
-const PLACEHOLDER_SECRETS = new Set([
-  'tu_clave_secreta_jwt_para_tokens_de_acceso',
-  'tu_clave_secreta_para_refresh_tokens',
-  'cambia-esta-clave',
-  'secret',
-  'changeme'
-]);
+function loadKeyMaterial() {
+  const privatePath = (process.env.JWT_PRIVATE_KEY_PATH || '').trim();
+  const publicPath = (process.env.JWT_PUBLIC_KEY_PATH || '').trim();
 
-const MIN_SECRET_LENGTH = 32;
-
-function resolveSecret(name, envValue) {
-  const provided = (envValue || '').trim();
-
-  if (provided) {
-    if (PLACEHOLDER_SECRETS.has(provided.toLowerCase())) {
-      throw new Error(
-        `${name} contiene un valor de ejemplo. Genera un secreto real con: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
-      );
-    }
-    if (provided.length < MIN_SECRET_LENGTH) {
-      throw new Error(`${name} debe tener al menos ${MIN_SECRET_LENGTH} caracteres (se requieren ${provided.length})`);
-    }
-    const lowEntropy = new Set(provided.toLowerCase()).size <= 4;
-    if (lowEntropy) {
-      throw new Error(`${name} es demasiado predecible; genera un valor criptográficamente aleatorio`);
-    }
-    return provided;
+  if (!privatePath || !publicPath) {
+    throw new Error(
+      'Faltan JWT_PRIVATE_KEY_PATH y/o JWT_PUBLIC_KEY_PATH. '
+      + 'Ejecuta `npm run keys` para generar el par de llaves RSA y define ambas rutas en tu .env '
+      + '(por ejemplo: JWT_PRIVATE_KEY_PATH=./keys/jwt-private.pem).'
+    );
   }
 
-  if (IS_PRODUCTION) {
-    throw new Error(`${name} es obligatoria en producción. Defínela en la variable de entorno (nunca en el código fuente).`);
+  const resolvedPrivate = path.resolve(privatePath);
+  const resolvedPublic = path.resolve(publicPath);
+
+  const missing = [resolvedPrivate, resolvedPublic].filter((file) => !fs.existsSync(file));
+  if (missing.length > 0) {
+    throw new Error(
+      `No se encontró la llave RSA en: ${missing.join(', ')}. `
+      + 'Ejecuta `npm run keys` para generarla y revisa las rutas en tu .env.'
+    );
   }
 
-  // Solo en desarrollo: secreto efímero para que la app arranque sin configuración,
-  // pero se invalida al reiniciar el servidor (no es persistente ni predecible).
-  return crypto.randomBytes(48).toString('hex');
+  const privateKey = fs.readFileSync(resolvedPrivate, 'utf8');
+  const publicKey = fs.readFileSync(resolvedPublic, 'utf8');
+
+  if (!privateKey.trim() || !publicKey.trim()) {
+    throw new Error(
+      'Las llaves JWT están vacías. Ejecuta `npm run keys` para volver a generarlas.'
+    );
+  }
+
+  return { privateKey, publicKey };
 }
 
-const JWT_SECRET = resolveSecret('JWT_SECRET', process.env.JWT_SECRET);
-const JWT_REFRESH_SECRET = resolveSecret('JWT_REFRESH_SECRET', process.env.JWT_REFRESH_SECRET);
-
-if (JWT_SECRET === JWT_REFRESH_SECRET) {
-  throw new Error('JWT_SECRET y JWT_REFRESH_SECRET deben ser distintos entre sí');
-}
+const { privateKey: JWT_PRIVATE_KEY, publicKey: JWT_PUBLIC_KEY } = loadKeyMaterial();
 
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutos (Requerimiento de seguridad computacional)
 const REFRESH_TOKEN_EXPIRY_DAYS = 7;
 
 /**
- * Genera un Access Token de corta duración
+ * Genera un Access Token de corta duración firmado con RS256.
  */
 function generateAccessToken(user) {
   return jwt.sign(
@@ -68,8 +62,8 @@ function generateAccessToken(user) {
       id_rol: user.id_rol,
       nombre_rol: user.nombre_rol
     },
-    JWT_SECRET,
-    { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
+    JWT_PRIVATE_KEY,
+    { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'RS256' }
   );
 }
 
@@ -175,7 +169,7 @@ function authenticateToken(req, res, next) {
     return res.status(401).json({ error: 'Acceso no autorizado: Token no proporcionado' });
   }
 
-  jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, decoded) => {
+  jwt.verify(token, JWT_PUBLIC_KEY, { algorithms: ['RS256'] }, (err, decoded) => {
     if (err) {
       if (err.name === 'TokenExpiredError') {
         return res.status(401).json({
@@ -183,7 +177,7 @@ function authenticateToken(req, res, next) {
           code: 'TOKEN_EXPIRED'
         });
       }
-      return res.status(403).json({ error: 'Token inválido' });
+      return res.status(401).json({ error: 'Token inválido' });
     }
 
     const user = db.prepare(`
@@ -219,7 +213,7 @@ function optionalAuthenticateToken(req, res, next) {
     return next();
   }
 
-  jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, decoded) => {
+  jwt.verify(token, JWT_PUBLIC_KEY, { algorithms: ['RS256'] }, (err, decoded) => {
     if (!err && decoded) {
       const user = db.prepare(`
         SELECT u.id, u.nombre, u.email, u.id_rol, r.nombre_rol
@@ -246,7 +240,5 @@ module.exports = {
   getCookie,
   extractToken,
   ACCESS_TOKEN_EXPIRY,
-  REFRESH_TOKEN_EXPIRY_DAYS,
-  JWT_SECRET,
-  JWT_REFRESH_SECRET
+  REFRESH_TOKEN_EXPIRY_DAYS
 };
