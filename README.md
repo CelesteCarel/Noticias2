@@ -19,20 +19,30 @@ cd Portal-de-Noticias-UNACH
 # 2. Instalar dependencias
 npm install
 
-# 3. Crear el archivo de configuración
+# 3. Generar el par de llaves RSA para firmar los JWT (RS256)
+npm run keys
+
+# 4. Crear el archivo de configuración
 cp .env.example .env      # Linux/macOS
 copy .env.example .env    # Windows
 ```
 
-En `.env` debes sustituir **como mínimo** los secretos, porque la aplicación se
-niega a arrancar con los valores de ejemplo del archivo:
+Las llaves se escriben en `keys/jwt-private.pem` (modo `0600`) y
+`keys/jwt-public.pem`. Esa carpeta está en `.gitignore`: **las llaves nunca se
+suben al repositorio**. Para volver a generarlas (invalida todos los tokens ya
+emitidos) usa `npm run keys -- --force`.
+
+En `.env`, genera una llave simétrica propia para los datos cifrados y define las
+contraseñas de los tres usuarios iniciales (`DEFAULT_*_PASSWORD`):
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Genera dos valores distintos para `JWT_SECRET` y `JWT_REFRESH_SECRET`, y define
-las contraseñas de los tres usuarios iniciales (`DEFAULT_*_PASSWORD`).
+Copia el resultado en `DATA_ENCRYPTION_KEY` (32 bytes en hexadecimal, 64
+caracteres). Deja las rutas `JWT_PRIVATE_KEY_PATH=./keys/jwt-private.pem` y
+`JWT_PUBLIC_KEY_PATH=./keys/jwt-public.pem`. La aplicación no arranca si falta
+alguna de esas variables o si los archivos de llaves no existen.
 
 ## Ejecutar
 
@@ -49,13 +59,27 @@ La base de datos SQLite se crea y se puebla sola en el primer arranque
 ## Pruebas
 
 ```bash
-npm test            # las dos suites
-npm run test:api    # API REST, RBAC y seguridad (59 pruebas)
-npm run test:config # arranque, esquema, secretos y TLS (19 pruebas)
+npm test            # todas las suites
+npm run test:api    # API REST, RBAC y seguridad (62 pruebas)
+npm run test:config # arranque, esquema, llaves y TLS (21 pruebas)
+npm run test:crypto # AES-256-GCM y RSA-SHA256 (12 pruebas)
 ```
 
-Ambas suites levantan el servidor en un proceso hijo con una base de datos
-temporal y secretos propios: no tocan tu `.env` ni tu base de datos.
+Las tres suites levantan el servidor en un proceso hijo con una base de datos
+temporal y llaves RSA propias: no tocan tu `.env`, tus llaves ni tu base de datos.
+
+## Demostración de criptografía
+
+Con las llaves y `DATA_ENCRYPTION_KEY` configuradas:
+
+```bash
+npm run demo
+```
+
+El script muestra el RFC de un usuario de prueba en claro, el valor cifrado real
+leído de la base de datos SQLite, el descifrado, y un token de acceso RS256 con
+su encabezado, verificación con la llave pública y rechazo de una versión
+alterada. Solo usa datos inventados.
 
 ## HTTPS
 
@@ -85,10 +109,13 @@ más.
 
 ```
 public/            Frontend (HTML/CSS/JS). Todo el dato viene por fetch('/api/...')
+scripts/           Utilidades: certificados TLS, llaves JWT y demo criptográfica
 src/routes/        Rutas de la API REST
 src/middleware/    Autenticación JWT, permisos, sanitización, rate limiting, auditoría, carga de imágenes
 src/database/      Esquema y seed de SQLite
 src/services/      Envío de correo
+src/utils/         Cifrado AES-256-GCM y firma RSA-SHA256 de las noticias
+keys/              Llaves RSA de los JWT. Se genera con npm run keys. No se versiona
 storage/uploads/   Imágenes que sube el usuario al publicar. No se versiona
 test/              Suites de pruebas
 ```
@@ -110,9 +137,17 @@ reemplaza o la noticia se elimina, el archivo anterior también se borra.
 - **Contraseñas**: bcrypt con salt (coste 12). El sanitizador nunca transforma un
   campo de credencial, de modo que la contraseña elegida es exactamente la que se
   guarda.
-- **Tokens**: JWT HS256 de 15 minutos, con refresh tokens rotatorios y detección
-  de reutilización. La firma, la expiración, el rol y los permisos se validan en
-  el servidor en cada petición.
+- **Tokens**: JWT firmados con **RS256** (RSA de 3072 bits, llave privada en
+  `keys/`). El servidor verifica con la llave pública y `algorithms: ['RS256']`;
+  un token con `alg: HS256` o con el payload alterado se rechaza con 401. Los
+  refresh tokens son valores aleatorios rotatorios guardados en la base de datos
+  y con detección de reutilización.
+- **Cifrado de datos sensibles**: teléfono, RFC y dirección del perfil, y las
+  notas confidenciales de las noticias, se guardan con **AES-256-GCM**
+  (`src/utils/crypto.js`). El dato entra en claro, se cifra en el servidor y se
+  almacena como `v1:<iv>:<tag>:<datos>`; solo se descifra al leerlo para el
+  usuario autorizado. Cada operación usa un IV aleatorio nuevo y el tag GCM
+  detecta cualquier alteración.
 - **Almacenamiento del token**: cookies `HttpOnly` + `SameSite=Strict` (+ `Secure`
   sobre HTTPS). El token nunca se escribe en `localStorage`; en el cliente solo
   vive en memoria y se envía como `Authorization: Bearer <token>`.
@@ -134,5 +169,7 @@ reemplaza o la noticia se elimina, el archivo anterior también se borra.
   arrancar, CORS restringido a los orígenes autorizados y cabeceras de seguridad
   (CSP, HSTS, `X-Content-Type-Options`, `X-Frame-Options`).
 - **Errores**: las respuestas al cliente nunca incluyen trazas, SQL ni versiones.
-- **Secretos**: fuera del código fuente, en variables de entorno, y el servidor
-  rechaza valores de ejemplo o de baja entropía.
+- **Secretos**: fuera del código fuente. La llave simétrica y las contraseñas
+  iniciales viven en `.env` (no versionado); las llaves RSA viven en `keys/`
+  (ignorada por git) y se generan con `npm run keys`. El servidor se niega a
+  arrancar si falta `DATA_ENCRYPTION_KEY` o alguna de las llaves JWT.
