@@ -87,14 +87,6 @@
             <i class="fa-solid fa-gear"></i> <span>Administración</span>
           </button>
 
-          <button
-            class="btn btn-outline"
-            id="btnNavCryptoDemo"
-            title="Demostración de Cifrado Simétrico y Firma Asimétrica"
-          >
-            <i class="fa-solid fa-shield-halved"></i> <span>Demo Criptografía</span>
-          </button>
-
           <!-- Bloque de Autenticación -->
           <div id="authContainer">
             <div id="guestButtons" class="auth-group">
@@ -429,13 +421,13 @@
                 <span class="crypto-tag">Seguridad Aplicada UNACH</span>
               </div>
 
-              <!-- MECANISMO 2: FIRMA DIGITAL ASIMÉTRICA (RSA-2048 / SHA-256) -->
+              <!-- MECANISMO 2: FIRMA DIGITAL ASIMÉTRICA (RSA-3072 / SHA-256) -->
               <div class="crypto-block crypto-asymmetric-block">
                 <div class="crypto-block-title">
                   <div class="crypto-badge-seal valid" id="readerSealBadge">
                     <i class="fa-solid fa-certificate"></i> Sello Digital Oficial (RSA-SHA256)
                   </div>
-                  <span class="crypto-algo-label">Mecanismo Asimétrico • Llave de 2048 bits</span>
+                  <span class="crypto-algo-label">Mecanismo Asimétrico • Llave de 3072 bits</span>
                 </div>
                 <p class="crypto-desc">
                   Este documento fue firmado digitalmente con la <strong>Llave Privada</strong> del servidor al publicarse, garantizando su autenticidad, autoría e integridad inmutable.
@@ -486,7 +478,7 @@
                     <span class="badge-cipher tag"><i class="fa-solid fa-tag"></i> Auth Tag GCM (16 bytes)</span>
                     <span class="badge-cipher data"><i class="fa-solid fa-lock"></i> Ciphertext AES-256</span>
                   </div>
-                  <small class="text-muted">Si un atacante sustrae el archivo de la base de datos, solo verá la cadena cifrada incomprensible de arriba y no podrá obtener el texto original sin la variable <code>CRYPTO_AES_KEY</code>.</small>
+                  <small class="text-muted">Si un atacante sustrae el archivo de la base de datos, solo verá la cadena cifrada incomprensible de arriba y no podrá obtener el texto original sin la variable <code>DATA_ENCRYPTION_KEY</code>.</small>
                 </div>
               </div>
             </div>
@@ -615,7 +607,7 @@
                   placeholder="Información confidencial, fuentes periodísticas reservadas o datos de investigación que se cifrarán en reposo..."
                 ></textarea>
                 <p class="form-hint">
-                  <i class="fa-solid fa-lock"></i> Se guardará cifrado en la base de datos con AES-256-GCM usando la llave de entorno <code>CRYPTO_AES_KEY</code>. Además, toda la noticia se firmará digitalmente con la Llave Privada RSA.
+                  <i class="fa-solid fa-lock"></i> Se guardará cifrado en la base de datos con AES-256-GCM usando la llave de entorno <code>DATA_ENCRYPTION_KEY</code>. Además, toda la noticia se firmará digitalmente con la Llave Privada RSA.
                 </p>
               </div>
 
@@ -1087,190 +1079,6 @@
       </div>
     </div>
 
-    <!-- MODAL: LABORATORIO Y DEMOSTRACIÓN CRIPTOGRÁFICA (UNACH) -->
-    <div class="modal-backdrop" id="modalCryptoDemo">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <button class="modal-close" id="closeCryptoDemoModal">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-          <div class="modal-header">
-            <div class="crypto-modal-title-group">
-              <span class="badge badge-primary"><i class="fa-solid fa-shield-halved"></i> Ciberseguridad & Criptografía</span>
-              <h3>Laboratorio de Mecanismos Criptográficos</h3>
-            </div>
-            <p class="modal-subtitle">
-              Demostración interactiva en vivo de los dos mecanismos criptográficos integrados en la aplicación (Cifrado Simétrico AES-256-GCM y Firma Asimétrica RSA-SHA256).
-            </p>
-          </div>
-
-          <!-- Pestañas del Laboratorio -->
-          <div class="admin-nav-tabs crypto-tabs">
-            <button class="admin-tab active" data-cryptotab="tabCryptoSymmetric" id="btnTabCryptoSym">
-              <i class="fa-solid fa-key"></i> 1. Cifrado Simétrico (AES-256-GCM)
-            </button>
-            <button class="admin-tab" data-cryptotab="tabCryptoAsymmetric" id="btnTabCryptoAsym">
-              <i class="fa-solid fa-signature"></i> 2. Firma Asimétrica (RSA-SHA256)
-            </button>
-            <button class="admin-tab" data-cryptotab="tabCryptoDocs" id="btnTabCryptoDoc">
-              <i class="fa-solid fa-book-bookmark"></i> 3. Rúbrica y Especificaciones
-            </button>
-          </div>
-
-          <div class="modal-body crypto-modal-body">
-            <!-- TAB 1: CIFRADO SIMÉTRICO -->
-            <div class="crypto-tab-pane active" id="tabCryptoSymmetric">
-              <div class="crypto-intro-box">
-                <div class="crypto-intro-icon"><i class="fa-solid fa-lock"></i></div>
-                <div>
-                  <h4>Cifrado Simétrico en Reposo con AES-256-GCM</h4>
-                  <p>
-                    Protección de campos sensibles en la base de datos (notas confidenciales y fuentes periodísticas).
-                    Utiliza la librería nativa <code>node:crypto</code> con una llave de 256 bits configurada en <code>CRYPTO_AES_KEY</code> (.env).
-                  </p>
-                </div>
-              </div>
-
-              <!-- Simulador en vivo -->
-              <div class="card-panel-inner" style="margin-bottom: 1.5rem;">
-                <h5><i class="fa-solid fa-terminal"></i> Simulador Interactivo de Cifrado y Descifrado</h5>
-                <p class="form-hint">Escribe cualquier texto confidencial para ver cómo la librería procesa el IV, Auth Tag y Ciphertext en tiempo real:</p>
-                <div class="crypto-sim-form">
-                  <div class="form-field">
-                    <input type="text" id="cryptoSimInput" class="form-input" placeholder="Ej: Testigo protegido: Lic. Morales, informe confidencial #2026-X" value="Fuente confidencial reservada: Informe de auditoría interna #UNACH-2026" />
-                  </div>
-                  <button type="button" class="btn btn-primary" id="btnRunCryptoSim">
-                    <i class="fa-solid fa-play"></i> Ejecutar Flujo Criptográfico
-                  </button>
-                </div>
-
-                <div class="crypto-sim-output" id="cryptoSimOutput" style="display: none; margin-top: 1rem;">
-                  <!-- Salida dinámica -->
-                </div>
-              </div>
-
-              <!-- Tabla Comparativa BD vs Aplicación -->
-              <div class="card-panel-inner">
-                <div class="raw-db-header-bar">
-                  <h5><i class="fa-solid fa-database"></i> Datos Reales en Base de Datos: Antes vs. Después del Cifrado</h5>
-                  <button type="button" class="btn btn-sm btn-outline" id="btnRefreshCryptoTable">
-                    <i class="fa-solid fa-rotate-right"></i> Actualizar Datos
-                  </button>
-                </div>
-                <p class="form-hint">Demostración del flujo completo: El dato entra en claro, se almacena cifrado en la base de datos, y se descifra para el usuario con sesión:</p>
-                
-                <div class="table-container" style="max-height: 280px; overflow-y: auto;">
-                  <table class="data-table crypto-table">
-                    <thead>
-                      <tr>
-                        <th style="width: 50px;">ID</th>
-                        <th style="width: 220px;">Título de Noticia</th>
-                        <th>Almacenado en BD (Cifrado AES-256-GCM)</th>
-                        <th>Descifrado en App (Texto en Claro)</th>
-                      </tr>
-                    </thead>
-                    <tbody id="cryptoDbTableBody">
-                      <!-- Filas dinámicas -->
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- TAB 2: FIRMA ASIMÉTRICA -->
-            <div class="crypto-tab-pane" id="tabCryptoAsymmetric" style="display: none;">
-              <div class="crypto-intro-box">
-                <div class="crypto-intro-icon"><i class="fa-solid fa-file-shield"></i></div>
-                <div>
-                  <h4>Firma Digital Asimétrica con RSA-2048 y SHA-256</h4>
-                  <p>
-                    Garantía de integridad y autenticidad para cada noticia publicada.
-                    El servidor firma con su <strong>Llave Privada</strong> (<code>portal-private.pem</code>) y cualquier persona puede verificar la autenticidad con la <strong>Llave Pública</strong> (<code>portal-public.pem</code>).
-                  </p>
-                </div>
-              </div>
-
-              <!-- Visor de Llave Pública -->
-              <div class="card-panel-inner" style="margin-bottom: 1.5rem;">
-                <div class="raw-db-header-bar">
-                  <h5><i class="fa-solid fa-key"></i> Llave Pública Oficial del Portal (RSA 2048 bits)</h5>
-                  <span class="badge badge-success"><i class="fa-solid fa-check"></i> Activa en el Servidor</span>
-                </div>
-                <div class="key-fingerprint-box">
-                  <strong>Huella Digital (Fingerprint SHA-256):</strong>
-                  <code id="cryptoPublicKeyFingerprint">Cargando...</code>
-                </div>
-                <pre class="public-key-pem" id="cryptoPublicKeyPem">Cargando clave pública...</pre>
-              </div>
-
-              <!-- Verificador de Noticias y Prueba de Tampering -->
-              <div class="card-panel-inner">
-                <h5><i class="fa-solid fa-vial-virus"></i> Prueba de Detección de Tampering (Integridad en Vivo)</h5>
-                <p class="form-hint">Selecciona una noticia para comprobar su firma válida o simular una alteración no autorizada del contenido:</p>
-                
-                <div class="tamper-control-grid">
-                  <div class="form-field">
-                    <label for="tamperNewsSelect">Seleccionar Noticia:</label>
-                    <select id="tamperNewsSelect" class="form-input"></select>
-                  </div>
-                  <div class="tamper-btn-group">
-                    <button type="button" class="btn btn-outline" id="btnVerifySelectedNews">
-                      <i class="fa-solid fa-shield-check"></i> Verificar Firma Original
-                    </button>
-                    <button type="button" class="btn btn-danger" id="btnTamperSelectedNews">
-                      <i class="fa-solid fa-triangle-exclamation"></i> Inyectar Alteración (Tamper)
-                    </button>
-                  </div>
-                </div>
-
-                <div class="tamper-result-stage" id="tamperResultStage" style="display: none; margin-top: 1rem;">
-                  <!-- Resultado dinámico de tampering -->
-                </div>
-              </div>
-            </div>
-
-            <!-- TAB 3: DOCUMENTACIÓN Y RÚBRICA -->
-            <div class="crypto-tab-pane" id="tabCryptoDocs" style="display: none;">
-              <div class="card-panel-inner">
-                <h4><i class="fa-solid fa-graduation-cap"></i> Cumplimiento de Requisitos de la Práctica</h4>
-                
-                <div class="crypto-req-card">
-                  <h5>1. Cifrado Simétrico aplicado a datos de la aplicación</h5>
-                  <ul>
-                    <li><strong>Algoritmo implementado:</strong> AES-256-GCM (Advanced Encryption Standard con Galois/Counter Mode).</li>
-                    <li><strong>Librería:</strong> <code>node:crypto</code> (librería criptográfica estándar y nativa de Node.js basada en OpenSSL 3).</li>
-                    <li><strong>Almacenamiento de Llave:</strong> Variable de entorno <code>CRYPTO_AES_KEY</code> en el archivo <code>.env</code> (clave de 256 bits en hexadecimal). No está hardcodeada en el código fuente.</li>
-                    <li><strong>Flujo completo demostrado:</strong> El texto sensible entra en claro por formulario/API, se cifra con un IV aleatorio de 12 bytes y Auth Tag de 16 bytes, se guarda cifrado en formato <code>iv:authTag:ciphertext</code>, y se descifra para usuarios con permiso.</li>
-                  </ul>
-                </div>
-
-                <div class="crypto-req-card" style="margin-top: 1rem;">
-                  <h5>2. Cifrado / Firma Asimétrica aplicada a una función</h5>
-                  <ul>
-                    <li><strong>Algoritmo implementado:</strong> RSA-SHA256 (Longitud de clave de 2048 bits).</li>
-                    <li><strong>Librería:</strong> <code>node:crypto</code> (módulo nativo).</li>
-                    <li><strong>Almacenamiento de Llaves:</strong>
-                      <ul>
-                        <li>Llave Privada: Archivo protegido <code>certs/portal-private.pem</code> con permisos de solo lectura para el proceso del servidor (ruta en <code>PORTAL_PRIVATE_KEY_PATH</code>).</li>
-                        <li>Llave Pública: Archivo <code>certs/portal-public.pem</code> accesible públicamente vía API <code>/api/crypto/public-key</code> para verificación ciudadana (ruta en <code>PORTAL_PUBLIC_KEY_PATH</code>).</li>
-                      </ul>
-                    </li>
-                    <li><strong>Caso Real:</strong> Firma digital y sello de autenticidad e integridad de noticias y comunicados periodísticos. Permite detectar de inmediato si un registro de la base de datos fue manipulado por un tercero.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline" id="btnCloseCryptoDemoFooter">
-              Cerrar Laboratorio
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Contenedor de Toasts -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -1287,7 +1095,6 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/news.js"></script>
-    <script src="js/crypto-lab.js"></script>
     <script src="js/admin.js"></script>
     <script src="js/app.js"></script>
   </body>

@@ -17,7 +17,32 @@ const News = {
 
   init() {
     this.bindEvents();
+    this.bindCryptoReaderEvents();
     this.loadNews();
+  },
+
+  /**
+   * Acciones del panel criptográfico del lector: verificar la firma de la
+   * noticia abierta y probar que una alteración es detectada.
+   */
+  bindCryptoReaderEvents() {
+    const btnVerify = document.getElementById('btnVerifySignatureLive');
+    if (btnVerify) {
+      btnVerify.addEventListener('click', () => this.verifyCurrentReaderArticle());
+    }
+
+    const btnTamper = document.getElementById('btnTestTamperingLive');
+    if (btnTamper) {
+      btnTamper.addEventListener('click', () => this.tamperCurrentReaderArticle());
+    }
+
+    const btnToggleRaw = document.getElementById('btnToggleRawDbView');
+    if (btnToggleRaw) {
+      btnToggleRaw.addEventListener('click', () => {
+        const box = document.getElementById('readerRawDbBox');
+        if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      });
+    }
   },
 
   bindEvents() {
@@ -844,6 +869,52 @@ const News = {
       if (rawCipher) rawCipher.textContent = article.nota_confidencial_raw || 'No disponible en SQLite';
     } else {
       if (confBlock) confBlock.style.display = 'none';
+    }
+  },
+
+  async verifyCurrentReaderArticle() {
+    const article = this.currentReaderArticle;
+    const box = document.getElementById('readerVerificationResult');
+    if (!article || !box) return;
+
+    box.style.display = 'block';
+    box.className = 'crypto-verification-result';
+    box.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando firma digital con la llave pública RSA...';
+
+    try {
+      const res = await API.post('/crypto/verify-news', { id_noticia: article.id });
+      box.className = `crypto-verification-result ${res.valida ? 'success' : 'danger'}`;
+      box.innerHTML = `
+        <div><strong>${res.mensaje}</strong></div>
+        <small style="display: block; margin-top: 4px;">
+          <strong>Algoritmo:</strong> ${res.algoritmo} | <strong>Huella de llave pública:</strong> <code>${res.huella_clave_publica}</code>
+        </small>
+      `;
+    } catch (e) {
+      box.className = 'crypto-verification-result danger';
+      box.textContent = 'Error al verificar la firma: ' + e.message;
+    }
+  },
+
+  async tamperCurrentReaderArticle() {
+    const article = this.currentReaderArticle;
+    const box = document.getElementById('readerVerificationResult');
+    if (!article || !box) return;
+
+    box.style.display = 'block';
+    box.className = 'crypto-verification-result danger';
+    box.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Simulando alteración del contenido...';
+
+    try {
+      const res = await API.post('/crypto/test-tampering', { id_noticia: article.id });
+      box.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 4px;">
+          <i class="fa-solid fa-shield-virus"></i> ${res.resultado_con_tampering.estado}
+        </div>
+        <small>Se alteró el contenido en memoria y la llave pública rechazó la firma. El documento original no fue modificado.</small>
+      `;
+    } catch (e) {
+      box.textContent = 'Error en la prueba de alteración: ' + e.message;
     }
   },
 
