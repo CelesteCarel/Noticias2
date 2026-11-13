@@ -12,10 +12,28 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
 const ROOT = path.join(__dirname, '..');
 const PORT = Number(process.env.TEST_PORT || 3177);
 const BASE_URL = `http://127.0.0.1:${PORT}/api`;
+
+// Llaves RSA temporales y llave simétrica aleatoria para las instancias de
+// prueba: nunca se usan las llaves reales del proyecto.
+const TEST_KEYS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'portal-api-keys-'));
+const TEST_PRIVATE_KEY = path.join(TEST_KEYS_DIR, 'jwt-private.pem');
+const TEST_PUBLIC_KEY = path.join(TEST_KEYS_DIR, 'jwt-public.pem');
+{
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+    modulusLength: 3072,
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+  });
+  fs.writeFileSync(TEST_PRIVATE_KEY, privateKey, { mode: 0o600 });
+  fs.writeFileSync(TEST_PUBLIC_KEY, publicKey);
+}
+const TEST_DATA_KEY = crypto.randomBytes(32).toString('hex');
 
 const CREDENTIALS = {
   admin: { email: 'admin@portalnoticias.com', password: 'AdminSeguro2026' },
@@ -167,8 +185,9 @@ function spawnTestServer({ port, tag, env = {} }) {
         UPLOAD_DIR: uploadDir,
         CORS_ORIGIN: `http://localhost:${port},http://127.0.0.1:${port}`,
         TRUST_PROXY: 'false',
-        JWT_SECRET: 'a'.repeat(48) + 'x7Kq2',
-        JWT_REFRESH_SECRET: 'b'.repeat(48) + 'z9Rt5',
+        DATA_ENCRYPTION_KEY: TEST_DATA_KEY,
+        JWT_PRIVATE_KEY_PATH: TEST_PRIVATE_KEY,
+        JWT_PUBLIC_KEY_PATH: TEST_PUBLIC_KEY,
         DEFAULT_ADMIN_PASSWORD: CREDENTIALS.admin.password,
         DEFAULT_EDITOR_PASSWORD: CREDENTIALS.editor.password,
         DEFAULT_REGULAR_PASSWORD: CREDENTIALS.lector.password,
@@ -285,7 +304,7 @@ async function run() {
     const parts = res.json.accessToken.split('.');
     assert.strictEqual(parts.length, 3, 'El token debe tener 3 segmentos JWT');
     const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
-    assert.strictEqual(header.alg, 'HS256');
+    assert.strictEqual(header.alg, 'RS256');
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
     assert.ok(payload.nombre_rol, 'El payload debe incluir el rol');
     assert.ok(!/password|secret/i.test(JSON.stringify(payload)), 'El payload no debe incluir secretos');
@@ -304,6 +323,35 @@ async function run() {
       headers: { Authorization: `Bearer ${'a'.repeat(20)}.b.c` }
     });
     assert.ok([401, 403].includes(res.status), `Status inesperado: ${res.status}`);
+  });
+
+  await test('Un token con el payload alterado es rechazado con 401', async () => {
+    const client = await loginAs('lector');
+    const token = client.jar.get('portal_access_token');
+    const [encabezado, payloadB64, firma] = token.split('.');
+
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString());
+    payload.id_rol = 1;
+    payload.nombre_rol = 'Administrador';
+    const payloadAlterado = Buffer.from(JSON.stringify(payload)).toString('base64url');
+
+    const res = await fetch(`${BASE_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${encabezado}.${payloadAlterado}.${firma}` }
+    });
+    assert.strictEqual(res.status, 401, 'La firma RS256 debe detectar el payload modificado');
+  });
+
+  await test('Un token firmado con HS256 es rechazado con 401', async () => {
+    const falso = jwt.sign(
+      { id: 1, email: 'admin@portalnoticias.com', id_rol: 1, nombre_rol: 'Administrador' },
+      crypto.randomBytes(32).toString('hex'),
+      { algorithm: 'HS256', expiresIn: '15m' }
+    );
+
+    const res = await fetch(`${BASE_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${falso}` }
+    });
+    assert.strictEqual(res.status, 401, 'El servidor solo debe aceptar RS256');
   });
 
   await test('Los tres roles predeterminados inician sesión', async () => {
@@ -410,6 +458,40 @@ async function run() {
       assert.ok(/^\$2[aby]\$\d{2}\$/.test(row.password), `Hash bcrypt inválido para ${row.email}`);
       assert.ok(!row.password.includes('Seguro2026'), 'La contraseña no debe estar en texto plano');
     }
+  });
+
+  await test('El perfil se guarda cifrado con AES-256-GCM y se lee en claro', async () => {
+    const client = await loginAs('lector');
+    const token = client.jar.get('portal_access_token');
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+
+    const datos = {
+      telefono: '9611234567',
+      rfc: 'HERM900101ABC',
+      direccion: 'Av. Central 123, Tuxtla Gutiérrez, Chiapas'
+    };
+
+    const res = await client.put('/auth/perfil', datos);
+    assert.strictEqual(res.status, 200, `No se pudo guardar el perfil: ${res.raw}`);
+
+    // Se lee la fila real de SQLite: los tres campos deben estar cifrados.
+    const { DatabaseSync } = require('node:sqlite');
+    const db = new DatabaseSync(primaryServer.dbPath);
+    const fila = db.prepare('SELECT telefono, rfc, direccion FROM usuarios WHERE id = ?').get(payload.id);
+    db.close();
+
+    assert.ok(fila, 'El usuario de la prueba debe existir en la base de datos');
+    for (const [campo, valor] of Object.entries(datos)) {
+      assert.ok(fila[campo].startsWith('v1:'), `${campo} debe empezar con el prefijo v1:`);
+      assert.ok(!fila[campo].includes(valor), `${campo} no debe contener el valor en claro`);
+    }
+
+    // GET /auth/me descifra solo para el propio usuario autenticado.
+    const me = await client.get('/auth/me');
+    assert.strictEqual(me.status, 200);
+    assert.strictEqual(me.json.user.telefono, datos.telefono);
+    assert.strictEqual(me.json.user.rfc, datos.rfc);
+    assert.strictEqual(me.json.user.direccion, datos.direccion);
   });
 
   await test('La sanitización NO altera la contraseña elegida por el usuario', async () => {

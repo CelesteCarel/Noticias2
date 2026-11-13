@@ -41,26 +41,28 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
-// Secretos aleatorios propios: la aplicación rechaza los de ejemplo y también los
-// de baja entropía, así que no sirven para esta suite.
-const SEC1 = crypto.randomBytes(40).toString('hex');
-const SEC2 = crypto.randomBytes(40).toString('hex');
+// Llaves RSA temporales y llave simétrica aleatoria: las pruebas nunca usan las
+// llaves reales del proyecto ni un secreto fijo.
+const TMP_KEYS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'portal-keys-'));
+const TMP_PRIVATE_KEY = path.join(TMP_KEYS_DIR, 'jwt-private.pem');
+const TMP_PUBLIC_KEY = path.join(TMP_KEYS_DIR, 'jwt-public.pem');
+
+{
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+    modulusLength: 3072,
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+  });
+  fs.writeFileSync(TMP_PRIVATE_KEY, privateKey, { mode: 0o600 });
+  fs.writeFileSync(TMP_PUBLIC_KEY, publicKey);
+}
+
+const DATA_KEY = crypto.randomBytes(32).toString('hex');
 
 const BASE_ENV = `
-  process.env.JWT_SECRET = ${JSON.stringify(SEC1)};
-  process.env.JWT_REFRESH_SECRET = ${JSON.stringify(SEC2)};
-  process.env.DEFAULT_ADMIN_PASSWORD = 'ClaveSeguraAdmin1';
-  process.env.DEFAULT_EDITOR_PASSWORD = 'ClaveSeguraEditor1';
-  process.env.DEFAULT_REGULAR_PASSWORD = 'ClaveSeguraLector1';
-  process.env.SMTP_USER = '';
-  process.env.SMTP_PASS = '';
-`;
-
-/**
- * Solo las variables que no son secretos. Se usa cuando la prueba necesita fijar
- * JWT_SECRET o JWT_REFRESH_SECRET por su cuenta y no debe verse sobrescrito.
- */
-const NON_SECRET_ENV = `
+  process.env.DATA_ENCRYPTION_KEY = ${JSON.stringify(DATA_KEY)};
+  process.env.JWT_PRIVATE_KEY_PATH = ${JSON.stringify(TMP_PRIVATE_KEY)};
+  process.env.JWT_PUBLIC_KEY_PATH = ${JSON.stringify(TMP_PUBLIC_KEY)};
   process.env.DEFAULT_ADMIN_PASSWORD = 'ClaveSeguraAdmin1';
   process.env.DEFAULT_EDITOR_PASSWORD = 'ClaveSeguraEditor1';
   process.env.DEFAULT_REGULAR_PASSWORD = 'ClaveSeguraLector1';
@@ -205,44 +207,54 @@ async function run() {
 
   section('3. Secretos fuera del código fuente');
 
-  await test('Se rechazan los secretos de ejemplo publicados en .env.example', () => {
-    const dbPath = tempDbPath('phsecret');
+  await test('Sin DATA_ENCRYPTION_KEY el cifrado no arranca y explica cómo generarla', () => {
     const r = runNode(`
-      process.env.DB_PATH = ${JSON.stringify(dbPath)};
-      process.env.JWT_SECRET = 'tu_clave_secreta_jwt_para_tokens_de_acceso';
-      process.env.JWT_REFRESH_SECRET = 'tu_clave_secreta_para_refresh_tokens';
-      ${NON_SECRET_ENV}
-      ${requireServer('src/middleware/auth.js')}
+      delete process.env.DATA_ENCRYPTION_KEY;
+      ${requireServer('src/utils/crypto.js')}
     `);
-    removeDb(dbPath);
 
-    assert.notStrictEqual(r.status, 0, 'Aceptó una clave que cualquiera que clone el repositorio conoce');
-    assert.match(r.stderr, /valor de ejemplo/, `Debe explicar que es un valor de ejemplo: ${r.stderr.slice(0, 160)}`);
-    return 'la aplicación se niega a arrancar con las claves de ejemplo';
+    assert.notStrictEqual(r.status, 0, 'Aceptó arrancar sin llave simétrica');
+    assert.match(r.stderr, /Falta DATA_ENCRYPTION_KEY/,
+      `Debe indicar la variable que falta: ${r.stderr.slice(0, 200)}`);
+    assert.match(r.stderr, /randomBytes\(32\)/,
+      `Debe incluir el comando para generar la llave: ${r.stderr.slice(0, 200)}`);
+    return 'el mensaje incluye el comando exacto para generar la llave';
   });
 
-  await test('Se rechazan los secretos de baja entropía', () => {
-    const dbPath = tempDbPath('lowent');
+  await test('Una DATA_ENCRYPTION_KEY mal formada se rechaza al cargar el módulo', () => {
+    const r = runNode(`
+      process.env.DATA_ENCRYPTION_KEY = 'no-es-hexadecimal';
+      ${requireServer('src/utils/crypto.js')}
+    `);
+
+    assert.notStrictEqual(r.status, 0, 'Aceptó una llave simétrica inválida');
+    assert.match(r.stderr, /no es válida/,
+      `Debe explicar el formato esperado: ${r.stderr.slice(0, 200)}`);
+    return 'exige 32 bytes en hexadecimal (64 caracteres)';
+  });
+
+  await test('Sin las llaves RSA los JWT no arrancan e indican ejecutar npm run keys', () => {
+    const dbPath = tempDbPath('nokeys');
     const r = runNode(`
       process.env.DB_PATH = ${JSON.stringify(dbPath)};
-      process.env.JWT_SECRET = 'a'.repeat(60);
-      process.env.JWT_REFRESH_SECRET = ${JSON.stringify(SEC2)};
-      ${NON_SECRET_ENV}
+      process.env.DATA_ENCRYPTION_KEY = ${JSON.stringify(DATA_KEY)};
+      delete process.env.JWT_PRIVATE_KEY_PATH;
+      delete process.env.JWT_PUBLIC_KEY_PATH;
       ${requireServer('src/middleware/auth.js')}
     `);
     removeDb(dbPath);
 
-    assert.notStrictEqual(r.status, 0, 'Aceptó un secreto completamente predecible');
-    assert.match(r.stderr, /predecible/, `Debe explicar el motivo: ${r.stderr.slice(0, 160)}`);
-    return 'rechaza claves como "aaaa..." que son triviales de adivinar';
+    assert.notStrictEqual(r.status, 0, 'Aceptó arrancar sin llaves RSA');
+    assert.match(r.stderr, /npm run keys/,
+      `Debe indicar cómo generar las llaves: ${r.stderr.slice(0, 200)}`);
+    return 'la aplicación se niega a firmar tokens sin un par RSA configurado';
   });
 
   await test('Se rechazan las contraseñas iniciales de ejemplo del seed', () => {
     const dbPath = tempDbPath('phpwd');
     const r = runNode(`
       process.env.DB_PATH = ${JSON.stringify(dbPath)};
-      process.env.JWT_SECRET = ${JSON.stringify(SEC1)};
-      process.env.JWT_REFRESH_SECRET = ${JSON.stringify(SEC2)};
+      ${BASE_ENV}
       process.env.DEFAULT_ADMIN_PASSWORD = 'cambia-esta-clave-inicial-admin';
       process.env.DEFAULT_EDITOR_PASSWORD = 'EditorSeguro2026';
       process.env.DEFAULT_REGULAR_PASSWORD = 'LectorSeguro2026';
