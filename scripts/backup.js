@@ -109,10 +109,33 @@ function verificarDestino() {
   try {
     stats = fs.statSync(destino);
   } catch {
-    throw new Error(
-      `La unidad externa no está conectada: no existe ${destino}. `
-      + 'Conecta la USB o el disco extraíble y vuelve a ejecutar el respaldo.'
-    );
+    // En Windows la unidad puede estar conectada y aun así faltar la carpeta
+    // (por ejemplo E:\respaldos la primera vez). Se crea solo si la raíz de la
+    // unidad existe. En Linux no se crea, para no escribir en el disco local
+    // cuando el punto de montaje de la USB no está montado.
+    const raiz = path.parse(destino).root;
+    const unidadConectada = process.platform === 'win32'
+      && raiz
+      && raiz !== destino
+      && fs.existsSync(raiz);
+
+    if (!unidadConectada) {
+      throw new Error(
+        `La unidad externa no está conectada o la carpeta de destino no existe: ${destino}. `
+        + 'Conecta la USB o el disco extraíble y vuelve a ejecutar el respaldo.'
+      );
+    }
+
+    try {
+      fs.mkdirSync(destino, { recursive: true });
+      registrarLog('INFO', `Se creó la carpeta de destino ${destino}`);
+    } catch {
+      throw new Error(
+        `La unidad externa está conectada, pero no se pudo crear la carpeta ${destino}. `
+        + 'Revisa los permisos de la unidad.'
+      );
+    }
+    stats = fs.statSync(destino);
   }
 
   if (!stats.isDirectory()) {
@@ -201,13 +224,25 @@ function respaldarImagenes(destino, nombreBase) {
 
 /**
  * Conserva solo los últimos BACKUP_RETENTION respaldos. El nombre incluye fecha
- * y hora en formato ordenable, así que basta con ordenar de más nuevo a más
- * viejo. Se elimina también la carpeta de imágenes asociada.
+ * y hora, y un sufijo numérico si dos ejecuciones caen en el mismo minuto. Se
+ * ordena por marca de tiempo y luego por sufijo, de más nuevo a más viejo.
+ * Se elimina también la carpeta de imágenes asociada.
  */
+function claveDeRespaldo(nombre) {
+  const partes = /^backup-(\d{4}-\d{2}-\d{2}_\d{4})(?:-(\d+))?\.sqlite$/.exec(nombre);
+  if (!partes) return { marca: nombre, sufijo: 0 };
+  return { marca: partes[1], sufijo: partes[2] ? Number(partes[2]) : 1 };
+}
+
 function aplicarRetencion(destino) {
   const respaldos = fs.readdirSync(destino)
     .filter((nombre) => /^backup-.*\.sqlite$/.test(nombre))
-    .sort()
+    .sort((a, b) => {
+      const claveA = claveDeRespaldo(a);
+      const claveB = claveDeRespaldo(b);
+      if (claveA.marca !== claveB.marca) return claveA.marca < claveB.marca ? -1 : 1;
+      return claveA.sufijo - claveB.sufijo;
+    })
     .reverse();
 
   const eliminados = [];

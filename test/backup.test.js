@@ -68,6 +68,20 @@ function respaldos() {
   return fs.readdirSync(BACKUP_DIR).filter((n) => /^backup-.*\.sqlite$/.test(n)).sort();
 }
 
+/**
+ * Ruta que simula una unidad desconectada. En Windows debe apuntar a una letra
+ * que no exista, porque una carpeta faltante dentro de C: ahora se crea sola.
+ */
+function rutaDesconectada() {
+  if (process.platform === 'win32') {
+    for (const letra of 'ZYXWVUTSRQPONMLKJIHGFED') {
+      const raiz = `${letra}:\\`;
+      if (!fs.existsSync(raiz)) return path.join(raiz, 'unidad-desconectada');
+    }
+  }
+  return path.join(TMP, 'unidad-desconectada');
+}
+
 function limpiar() {
   fs.rmSync(TMP, { recursive: true, force: true });
 }
@@ -119,8 +133,38 @@ function main() {
     assert.ok(archivos.length >= 1, 'Debe conservarse al menos el respaldo más reciente');
   });
 
+  test('La retención respeta el orden cuando varios respaldos caen en el mismo minuto', () => {
+    const dir = path.join(TMP, 'retencion-mismo-minuto');
+    fs.mkdirSync(dir, { recursive: true });
+
+    const r1 = ejecutarBackup({ BACKUP_DIR: dir, BACKUP_RETENTION: '2' });
+    assert.strictEqual(r1.status, 0, `El primer respaldo falló:\n${r1.stdout}\n${r1.stderr}`);
+    const primero = fs.readdirSync(dir).find((n) => /^backup-.*\.sqlite$/.test(n));
+    assert.ok(primero, 'El primer respaldo debe existir');
+
+    ejecutarBackup({ BACKUP_DIR: dir, BACKUP_RETENTION: '2' });
+    ejecutarBackup({ BACKUP_DIR: dir, BACKUP_RETENTION: '2' });
+
+    const archivos = fs.readdirSync(dir).filter((n) => /^backup-.*\.sqlite$/.test(n));
+    assert.strictEqual(archivos.length, 2, `Se esperaban 2 respaldos y hay ${archivos.length}`);
+    assert.ok(!archivos.includes(primero), 'El respaldo más antiguo debe eliminarse, no el intermedio');
+  });
+
+  if (process.platform === 'win32') {
+    test('Si la unidad está conectada y falta la carpeta, la crea automáticamente', () => {
+      const nueva = path.join(TMP, 'unidad-externa', 'respaldos');
+      assert.ok(!fs.existsSync(nueva), 'La carpeta no debe existir antes de la prueba');
+
+      const r = ejecutarBackup({ BACKUP_DIR: nueva });
+      assert.strictEqual(r.status, 0, `El script debió crear la carpeta:\n${r.stdout}\n${r.stderr}`);
+      assert.ok(fs.existsSync(nueva), 'La carpeta de destino debe crearse');
+      assert.ok(fs.readdirSync(nueva).some((n) => /^backup-.*\.sqlite$/.test(n)),
+        'El respaldo debe quedar dentro de la carpeta creada');
+    });
+  }
+
   test('Si la unidad externa no está conectada falla con un mensaje claro y sin tumbar nada', () => {
-    const inexistente = path.join(TMP, 'unidad-desconectada');
+    const inexistente = rutaDesconectada();
     const r = ejecutarBackup({ BACKUP_DIR: inexistente });
 
     assert.strictEqual(r.status, 1, 'El script debe terminar con código 1 cuando falla');

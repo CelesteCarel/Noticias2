@@ -65,7 +65,7 @@ npm test            # todas las suites
 npm run test:api    # API REST, RBAC y seguridad (65 pruebas)
 npm run test:config # arranque, esquema, llaves, TLS y redirección (23 pruebas)
 npm run test:crypto # AES-256-GCM, hash SHA-256 y RSA-SHA256 (15 pruebas)
-npm run test:backup # respaldo, retención y fallo de unidad (5 pruebas)
+npm run test:backup # respaldo, retención, orden, carpeta faltante y fallo de unidad (7 pruebas)
 ```
 
 Las cuatro suites levantan el servidor o usan una base temporal: no tocan tu
@@ -96,6 +96,11 @@ añade un sufijo (`-2`, `-3`...) para no sobrescribir nada.
 Si la unidad no está conectada, el script termina con código 1, escribe el
 motivo en `logs/backup.log` y registra `Fallo de Respaldo` en la auditoría. La
 aplicación sigue funcionando: el respaldo es un proceso independiente.
+
+En Windows, si la unidad está conectada pero la carpeta de `BACKUP_DIR` todavía
+no existe, el script la crea automáticamente. En Linux el punto de montaje debe
+existir antes de ejecutar el respaldo, para no escribir sin avisar en el disco
+local cuando la USB no está montada.
 
 Cada ejecución correcta registra `Respaldo de Base de Datos` en la bitácora.
 
@@ -378,6 +383,27 @@ curl -k https://192.168.188.10:3000/api/health
 
 Debe responder `{"status":"OK",...}`. Abre `https://192.168.188.10:3000` en el
 navegador, inicia sesión con el administrador y comprueba el panel y la auditoría.
+
+### Checklist de configuración en el servidor
+
+Lo que se configura en un equipo de desarrollo no se copia a la VM. En el
+servidor hay que rehacer estos puntos:
+
+- [ ] `.env` propio del servidor, creado desde `.env.example` y **nunca** subido
+      al repositorio.
+- [ ] `DATA_ENCRYPTION_KEY` nueva (64 hex) y contraseñas iniciales distintas.
+- [ ] `npm run keys` para generar el par RSA de los JWT.
+- [ ] `npm run certs -- --ip 192.168.188.10 --force` y comprobar el SAN:
+      `openssl x509 -in certs/dev-cert.pem -noout -text | grep -A1 "Subject Alternative Name"`.
+- [ ] `HTTPS_ENABLED=true`, `TLS_KEY_PATH=./certs/dev-key.pem` (la **llave**, no el
+      certificado) y `TLS_CERT_PATH=./certs/dev-cert.pem`.
+- [ ] `CORS_ORIGIN=https://192.168.188.10:3000` (y el nombre DNS si se usa).
+- [ ] `SMTP_*` con la contraseña de aplicación de Gmail escrita directamente en
+      el `.env` del servidor. No se comparte por chat ni por correo.
+- [ ] `BACKUP_DIR` apuntando a la unidad externa de esa máquina (por ejemplo
+      `E:\respaldos`) y la tarea `schtasks` programada con esa misma ruta.
+- [ ] Reglas de firewall en la VM y en OPNsense para el puerto 3000 (y 3080 si
+      hay redirección).
 
 ## Arquitectura
 
