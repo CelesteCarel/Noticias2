@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const db = require('../database/db');
+const { hashSha256 } = require('../utils/hash');
 
 /**
  * Llaves asimétricas para firmar y verificar los access tokens (RS256).
@@ -68,7 +69,10 @@ function generateAccessToken(user) {
 }
 
 /**
- * Genera y almacena un Refresh Token en base de datos
+ * Genera y almacena un Refresh Token en base de datos.
+ *
+ * En la tabla solo se guarda el hash SHA-256 del token. El valor en claro viaja
+ * al cliente en la cookie HttpOnly y nunca queda escrito en disco.
  */
 function generateRefreshToken(userId) {
   const token = crypto.randomBytes(40).toString('hex');
@@ -77,13 +81,13 @@ function generateRefreshToken(userId) {
   db.prepare(`
     INSERT INTO refresh_tokens (id_usuario, token, expira_en, revocado)
     VALUES (?, ?, ?, 0)
-  `).run(userId, token, expiraEn);
+  `).run(userId, hashSha256(token), expiraEn);
 
   return token;
 }
 
 /**
- * Valida un Refresh Token en base de datos
+ * Valida un Refresh Token en base de datos comparando su hash.
  */
 function validateRefreshToken(token) {
   if (!token) return null;
@@ -96,7 +100,7 @@ function validateRefreshToken(token) {
     JOIN usuarios u ON rt.id_usuario = u.id
     JOIN roles r ON u.id_rol = r.id
     WHERE rt.token = ? AND rt.revocado = 0
-  `).get(token);
+  `).get(hashSha256(token));
 
   if (!record) return null;
 
@@ -129,7 +133,7 @@ function validateRefreshToken(token) {
  */
 function revokeRefreshToken(token) {
   if (!token) return;
-  db.prepare('UPDATE refresh_tokens SET revocado = 1 WHERE token = ?').run(token);
+  db.prepare('UPDATE refresh_tokens SET revocado = 1 WHERE token = ?').run(hashSha256(token));
 }
 
 function revokeAllUserTokens(userId) {

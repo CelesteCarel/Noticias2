@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const { encryptSymmetric, signNews } = require('../utils/crypto.service');
+const { hashSha256, esHashSha256 } = require('../utils/hash');
 
 // La ruta de la base de datos puede fijarse con DB_PATH (lo usa la suite de
 // pruebas para no tocar la base de datos de la aplicación).
@@ -23,6 +24,9 @@ function initDb() {
 
   // Migraciones automáticas de columnas en caso de bases de datos preexistentes
   migrateColumns();
+
+  // Los secretos de un solo uso pasan de texto plano a hash SHA-256
+  migrateHashes();
 
   // Cargar datos iniciales
   seedDatabase();
@@ -150,6 +154,37 @@ function migrateColumns() {
     }
   } catch (err) {
     console.warn('[Criptografía] Advertencia al migrar firmas en noticias existentes:', err.message);
+  }
+}
+
+/**
+ * Migra a hash SHA-256 los secretos que versiones anteriores guardaban en texto
+ * plano. Es idempotente: un valor que ya tiene 64 caracteres hexadecimales se
+ * deja intacto.
+ */
+function migrateHashes() {
+  try {
+    const tokens = db.prepare('SELECT id, token FROM refresh_tokens').all();
+    const actualizarToken = db.prepare('UPDATE refresh_tokens SET token = ? WHERE id = ?');
+    for (const fila of tokens) {
+      if (fila.token && !esHashSha256(fila.token)) {
+        actualizarToken.run(hashSha256(fila.token), fila.id);
+      }
+    }
+  } catch (error) {
+    console.warn('[Seguridad] No se pudieron migrar los refresh tokens a hash:', error.message);
+  }
+
+  try {
+    const usuarios = db.prepare('SELECT id, codigo_recuperacion FROM usuarios WHERE codigo_recuperacion IS NOT NULL').all();
+    const actualizarCodigo = db.prepare('UPDATE usuarios SET codigo_recuperacion = ? WHERE id = ?');
+    for (const fila of usuarios) {
+      if (fila.codigo_recuperacion && !esHashSha256(fila.codigo_recuperacion)) {
+        actualizarCodigo.run(hashSha256(fila.codigo_recuperacion), fila.id);
+      }
+    }
+  } catch (error) {
+    console.warn('[Seguridad] No se pudieron migrar los códigos de recuperación a hash:', error.message);
   }
 }
 

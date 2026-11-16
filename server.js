@@ -20,6 +20,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const useHttps = process.env.HTTPS_ENABLED === 'true' || IS_PRODUCTION;
+const HTTP_REDIRECT_PORT = process.env.HTTP_REDIRECT_PORT
+  ? Number.parseInt(process.env.HTTP_REDIRECT_PORT, 10)
+  : null;
 
 // Ocultar la firma de Express para prevenir divulgación de información
 app.disable('x-powered-by');
@@ -174,6 +177,54 @@ if (useHttps) {
   server = http.createServer(app);
 }
 
+/*
+ * Redirección HTTP → HTTPS en un segundo puerto.
+ *
+ * Es opcional (HTTP_REDIRECT_PORT) para no abrir un puerto extra sin querer.
+ * El 308 conserva el método y el cuerpo de la petición, algo que importa si un
+ * cliente envía un POST por HTTP antes de ser redirigido.
+ */
+function iniciarRedireccionHttps() {
+  if (!HTTP_REDIRECT_PORT) return null;
+
+  if (!useHttps) {
+    console.warn('[TLS] HTTP_REDIRECT_PORT se ignora porque HTTPS_ENABLED no está activo.');
+    return null;
+  }
+
+  if (!Number.isInteger(HTTP_REDIRECT_PORT) || HTTP_REDIRECT_PORT < 1 || HTTP_REDIRECT_PORT > 65535) {
+    console.warn('[TLS] HTTP_REDIRECT_PORT no es un puerto válido; no se inicia la redirección.');
+    return null;
+  }
+
+  if (String(HTTP_REDIRECT_PORT) === String(PORT)) {
+    console.warn('[TLS] HTTP_REDIRECT_PORT no puede ser igual a PORT; no se inicia la redirección.');
+    return null;
+  }
+
+  const redirectServer = http.createServer((req, res) => {
+    const hostSinPuerto = String(req.headers.host || 'localhost').replace(/:\d+$/, '');
+    const destino = `https://${hostSinPuerto}:${PORT}${req.url || '/'}`;
+    res.writeHead(308, {
+      Location: destino,
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-store'
+    });
+    res.end('Esta aplicación solo acepta conexiones cifradas. Redirigiendo a HTTPS...');
+  });
+
+  redirectServer.on('error', (error) => {
+    // Un puerto ocupado no debe tumbar la API: se avisa y se sigue sirviendo HTTPS.
+    console.error(`[TLS] No se pudo iniciar la redirección HTTP en el puerto ${HTTP_REDIRECT_PORT}: ${error.message}`);
+  });
+
+  redirectServer.listen(HTTP_REDIRECT_PORT, () => {
+    console.log(`Redirección HTTP → HTTPS activa en http://localhost:${HTTP_REDIRECT_PORT}`);
+  });
+
+  return redirectServer;
+}
+
 // El directorio de imágenes debe existir antes de recibir la primera carga.
 asegurarDirectorio();
 
@@ -181,3 +232,5 @@ server.listen(PORT, () => {
   const protocol = useHttps ? 'https' : 'http';
   console.log(`Servidor iniciado en ${protocol}://localhost:${PORT}`);
 });
+
+iniciarRedireccionHttps();

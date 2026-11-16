@@ -2822,3 +2822,397 @@ input:disabled + .slider {
     gap: 0.6rem;
   }
 }
+
+/* =========================================================
+   DISEÑO RESPONSIVO (MÓVIL, TABLETA Y ESCRITORIO)
+   Compatible con Chrome, Firefox, Safari y Edge recientes.
+   ========================================================= */
+
+html {
+  /* Evita que Safari iOS agrande el texto al girar el dispositivo. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Botón de menú: solo aparece en pantallas pequeñas. */
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+  font-size: 1.1rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-toggle:hover,
+.nav-toggle:focus-visible {
+  border-color: var(--primary-border);
+  color: var(--primary-text);
+}
+
+/* El desplazamiento táctil suave en iOS/Android. */
+.table-container,
+.categories-container,
+.admin-nav-tabs {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1024px) {
+  .admin-stats-summary {
+    flex-wrap: wrap;
+  }
+
+  .hero-title {
+    font-size: 1.55rem;
+  }
+
+  .roles-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .masthead-container {
+    gap: 0.9rem;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+    order: 2;
+    margin-left: auto;
+  }
+
+  .header-actions {
+    display: none;
+    order: 3;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .header-actions.open {
+    display: flex;
+  }
+
+  .header-search {
+    width: 100%;
+  }
+
+  .header-actions > .btn,
+  .header-actions .auth-group .btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .auth-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .user-badge {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .user-info {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .user-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .btn-profile-action {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .admin-title {
+    font-size: 1.3rem;
+  }
+
+  .card-panel-header {
+    align-items: flex-start;
+  }
+
+  .panel-tools {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .panel-tools .form-input {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .masthead-header {
+    padding: 1rem 0;
+  }
+
+  .brand-title {
+    font-size: 1.65rem;
+    letter-spacing: 0.5px;
+  }
+
+  .brand-sub {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+  }
+
+  .utility-container {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .hero-details {
+    padding: 1.25rem;
+  }
+
+  .hero-image-wrap {
+    min-height: 220px;
+  }
+
+  .section-title-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .roles-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .modal-backdrop {
+    padding: 0.75rem;
+  }
+
+  .modal-dialog {
+    max-height: calc(100vh - 1.5rem);
+  }
+
+  .modal-content {
+    padding: 1.25rem;
+  }
+
+  .toast-container {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+  }
+
+  .toast {
+    max-width: none;
+    width: 100%;
+  }
+}
+
+/* Tablas del panel de administración en formato de tarjetas.
+   Cada <td> lleva data-label para que se lea el nombre de la columna. */
+@media (max-width: 640px) {
+  .table-container {
+    overflow-x: visible;
+  }
+
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table tr {
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    overflow: hidden;
+  }
+
+  .data-table tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .data-table td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.9rem;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .data-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .data-table td::before {
+    content: attr(data-label);
+    flex: 0 0 42%;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .data-table td:not([data-label])::before,
+  .data-table td[data-label=""]::before,
+  .data-table td.text-center::before {
+    content: none;
+  }
+
+  .data-table td.text-center {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .data-table tr:hover td {
+    background: transparent;
+  }
+
+  .role-select {
+    max-width: 55%;
+  }
+
+  .user-row-name {
+    justify-content: flex-end;
+  }
+
+  .admin-nav-tabs {
+    padding-bottom: 0.25rem;
+  }
+
+  .admin-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .admin-stats-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .stat-item {
+    padding: 0.5rem 0.35rem;
+  }
+
+  /* 16px evita el zoom automático de Safari iOS al enfocar un campo. */
+  .form-input,
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+
+  .btn-sm {
+    min-height: 40px;
+  }
+
+  .form-grid-2,
+  .profile-readonly {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-title {
+    font-size: 1.4rem;
+  }
+
+  .category-pill {
+    padding: 0.45rem 0.7rem;
+  }
+
+  .hero-title {
+    font-size: 1.3rem;
+  }
+
+  .admin-stats-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    padding: 1rem;
+  }
+
+  .modal-header h3 {
+    font-size: 1.05rem;
+  }
+
+  .data-table td {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.2rem;
+  }
+
+  .data-table td::before {
+    flex-basis: auto;
+  }
+
+  .user-row-name {
+    justify-content: flex-start;
+  }
+
+  .role-select {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+/* Áreas seguras de los móviles con notch. */
+@supports (padding: max(0px)) {
+  .container {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

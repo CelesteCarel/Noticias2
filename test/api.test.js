@@ -378,6 +378,21 @@ async function run() {
     assert.ok(/Path=\/api\/auth/i.test(refresh), 'El refresh debe estar limitado a /api/auth');
   });
 
+  await test('El refresh token se guarda en la base como hash SHA-256, no en claro', async () => {
+    const client = await loginAs('lector');
+    const token = client.jar.get('portal_refresh_token');
+    assert.ok(token, 'El login debe emitir un refresh token');
+
+    const { DatabaseSync } = require('node:sqlite');
+    const db = new DatabaseSync(primaryServer.dbPath);
+    const fila = db.prepare('SELECT token FROM refresh_tokens ORDER BY id DESC LIMIT 1').get();
+    db.close();
+
+    assert.ok(fila, 'Debe existir el registro del refresh token');
+    assert.match(fila.token, /^[0-9a-f]{64}$/, 'Debe almacenarse como hash SHA-256 hexadecimal');
+    assert.notStrictEqual(fila.token, token, 'El valor en claro no debe quedar en la base');
+  });
+
   await test('El refresh token rota y no se puede reutilizar', async () => {
     const client = await loginAs('lector');
     const refresh1 = client.jar.get('portal_refresh_token');
@@ -971,6 +986,36 @@ async function run() {
     assert.ok(res.json.message);
   });
 
+  await test('forgot-password responde igual exista o no el correo (anti-enumeración)', async () => {
+    const existente = await createClient().post('/auth/forgot-password', { email: CREDENTIALS.lector.email });
+    const inexistente = await createClient().post('/auth/forgot-password', {
+      email: `no-existe.${Date.now()}@example.com`
+    });
+
+    assert.strictEqual(inexistente.status, existente.status,
+      'El código HTTP no debe delatar si la cuenta existe');
+    assert.strictEqual(inexistente.json.message, existente.json.message,
+      'El mensaje debe ser idéntico en ambos casos');
+    assert.strictEqual(inexistente.json.error, undefined,
+      'No debe devolverse un error 404 para un correo inexistente');
+  });
+
+  await test('El código de recuperación se guarda como hash SHA-256, no en claro', async () => {
+    const email = `hashrecupera.${Date.now()}@t.com`;
+    await createClient().post('/auth/register', { nombre: 'Hash Recuperación', email, password: 'ClaveOriginal1' });
+    const solicitud = await createClient().post('/auth/forgot-password', { email });
+    assert.strictEqual(solicitud.status, 200);
+
+    const { DatabaseSync } = require('node:sqlite');
+    const db = new DatabaseSync(primaryServer.dbPath);
+    const fila = db.prepare('SELECT codigo_recuperacion FROM usuarios WHERE email = ?').get(email);
+    db.close();
+
+    assert.ok(fila && fila.codigo_recuperacion, 'Debe generarse un código de recuperación');
+    assert.match(fila.codigo_recuperacion, /^[0-9a-f]{64}$/,
+      'En la base debe quedar el hash SHA-256, no el código de 6 dígitos');
+  });
+
   await test('El código de recuperación incorrecto es rechazado', async () => {
     const res = await createClient().post('/auth/reset-password', {
       email: CREDENTIALS.lector.email, resetCode: '000000', newPassword: 'NuevaClaveSegura9'
@@ -981,7 +1026,6 @@ async function run() {
   section('9. Recuperación de contraseña de extremo a extremo');
 
   await test('El código recibido restablece la contraseña y permite iniciar sesión', async () => {
-    const { DatabaseSync } = require('node:sqlite');
     const email = `recupera.${Date.now()}@t.com`;
     const cliente = createClient();
     await cliente.post('/auth/register', { nombre: 'Recuperación E2E', email, password: 'ClaveOriginal1' });
@@ -989,15 +1033,27 @@ async function run() {
     const solicitud = await createClient().post('/auth/forgot-password', { email });
     assert.strictEqual(solicitud.status, 200, `Falló el envío de correo: ${solicitud.raw}`);
 
-    // El código real se lee de la base de datos: simula el correo recibido.
+    /*
+     * En la base solo queda el hash SHA-256 del código. Para simular el correo
+     * recibido se escribe el hash de un código conocido (el que el usuario
+     * habría leído en su bandeja) y se usa ese código en el formulario.
+     */
+    const codigo = '123456';
+    const hash = crypto.createHash('sha256').update(codigo, 'utf8').digest('hex');
+    const expira = new Date(Date.now() + 15 * 60000).toISOString();
+
+    const { DatabaseSync } = require('node:sqlite');
     const db = new DatabaseSync(primaryServer.dbPath);
-    const fila = db.prepare('SELECT codigo_recuperacion, codigo_expira FROM usuarios WHERE email = ?').get(email);
-    db.close();
+    const fila = db.prepare('SELECT codigo_recuperacion FROM usuarios WHERE email = ?').get(email);
     assert.ok(fila && fila.codigo_recuperacion, 'Debe generarse un código de recuperación');
-    assert.strictEqual(fila.codigo_recuperacion.length, 6, 'El código debe tener 6 dígitos');
+    assert.match(fila.codigo_recuperacion, /^[0-9a-f]{64}$/,
+      'En la base debe quedar un hash SHA-256, no el código de 6 dígitos');
+    db.prepare('UPDATE usuarios SET codigo_recuperacion = ?, codigo_expira = ? WHERE email = ?')
+      .run(hash, expira, email);
+    db.close();
 
     const restablecer = await createClient().post('/auth/reset-password', {
-      email, resetCode: fila.codigo_recuperacion, newPassword: 'ClaveRestablecida9'
+      email, resetCode: codigo, newPassword: 'ClaveRestablecida9'
     });
     assert.strictEqual(restablecer.status, 200, `Falló el restablecimiento: ${restablecer.raw}`);
 
@@ -1009,7 +1065,7 @@ async function run() {
 
     // El código es de un solo uso.
     const reutilizado = await createClient().post('/auth/reset-password', {
-      email, resetCode: fila.codigo_recuperacion, newPassword: 'OtraClaveDistinta8'
+      email, resetCode: codigo, newPassword: 'OtraClaveDistinta8'
     });
     assert.strictEqual(reutilizado.status, 400, 'El código no debe poder reutilizarse');
   });

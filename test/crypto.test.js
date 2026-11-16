@@ -33,6 +33,7 @@ process.env.JWT_PUBLIC_KEY_PATH = PUBLIC_KEY_PATH;
 process.env.DATA_ENCRYPTION_KEY = crypto.randomBytes(32).toString('hex');
 
 const { encrypt, decrypt, isEncrypted } = require('../src/utils/crypto');
+const { hashSha256, hashCoincide, esHashSha256 } = require('../src/utils/hash');
 const {
   encryptSymmetric,
   decryptSymmetric,
@@ -126,6 +127,33 @@ test('El servicio de noticias cifra en v1 y descifra correctamente', () => {
   const cipher = encryptSymmetric(original);
   assert.ok(cipher.startsWith('v1:'), 'El servicio debe usar el formato v1');
   assert.strictEqual(decryptSymmetric(cipher), original);
+});
+
+// ============================================================================
+// BLOQUE 1.5: HASH SHA-256 DE SECRETOS DE UN SOLO USO
+// ============================================================================
+console.log('\n[1.5. Hash SHA-256 de códigos y refresh tokens]');
+
+test('El hash SHA-256 tiene 64 caracteres hexadecimales y no contiene el valor original', () => {
+  const codigo = '123456';
+  const hash = hashSha256(codigo);
+
+  assert.strictEqual(hash.length, 64);
+  assert.match(hash, /^[0-9a-f]{64}$/);
+  assert.notStrictEqual(hash, codigo);
+  assert.ok(!hash.includes(codigo), 'El código no debe aparecer dentro del hash');
+  assert.ok(esHashSha256(hash), 'Debe reconocerse como hash SHA-256');
+});
+
+test('La comparación en tiempo constante acepta el valor correcto y rechaza otro', () => {
+  const hash = hashSha256('codigo-de-recuperacion');
+  assert.strictEqual(hashCoincide('codigo-de-recuperacion', hash), true);
+  assert.strictEqual(hashCoincide('codigo-de-recuperacion-2', hash), false);
+  assert.strictEqual(hashCoincide('codigo-de-recuperacion', 'texto-en-claro'), false);
+});
+
+test('Dos códigos distintos producen hashes distintos', () => {
+  assert.notStrictEqual(hashSha256('123456'), hashSha256('123457'));
 });
 
 // ============================================================================

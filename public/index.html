@@ -41,8 +41,19 @@
           </a>
         </div>
 
+        <!-- Botón de menú para pantallas pequeñas -->
+        <button
+          class="nav-toggle"
+          id="navToggle"
+          aria-label="Abrir menú de navegación"
+          aria-expanded="false"
+          aria-controls="headerActions"
+        >
+          <i class="fa-solid fa-bars" id="navToggleIcon"></i>
+        </button>
+
         <!-- Barra de Acciones y Sesión -->
-        <div class="header-actions">
+        <div class="header-actions" id="headerActions">
           <!-- Buscador -->
           <div class="header-search">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -359,8 +370,6 @@
                 </div>
               </div>
 
-              <div class="table-container">
-                <table class="data-table" id="auditTable">
               <div class="table-container">
                 <table class="data-table" id="auditTable">
                   <thead>

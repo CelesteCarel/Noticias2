@@ -39,7 +39,21 @@ function loadKey() {
     );
   }
 
-  return Buffer.from(raw, 'hex');
+  // Una llave con formato correcto puede seguir siendo inservible: el valor de
+  // ejemplo del .env, todo ceros o una cadena con muy poca variedad de bytes.
+  // Se rechaza al arrancar para no dar una falsa sensación de cifrado.
+  const key = Buffer.from(raw, 'hex');
+  const unicos = new Set(key).size;
+  const esPlaceholder = /genera[_-]?tu|tu[_-]?clave|change[_-]?me|example|placeholder/i.test(raw);
+  if (esPlaceholder || unicos < 8) {
+    throw new Error(
+      'DATA_ENCRYPTION_KEY es demasiado débil: usa una llave aleatoria de 32 bytes, '
+      + 'no el valor de ejemplo ni una secuencia repetitiva. Genera una nueva con: '
+      + GENERATE_KEY_COMMAND
+    );
+  }
+
+  return key;
 }
 
 const KEY = loadKey();

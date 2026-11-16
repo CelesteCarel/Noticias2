@@ -216,7 +216,22 @@ const Admin = {
         actionCell
       );
 
+      this.etiquetarCeldas(tr, [
+        'ID', 'Nombre', 'Correo Electrónico', 'Rol Actual',
+        'Artículos', 'Fecha de Registro', 'Acción'
+      ]);
+
       tbody.appendChild(tr);
+    });
+  },
+
+  /**
+   * Añade data-label a cada celda para que, en móvil, la tabla se lea como una
+   * ficha de tarjetas sin perder el nombre de la columna.
+   */
+  etiquetarCeldas(fila, etiquetas) {
+    [...fila.children].forEach((celda, indice) => {
+      if (etiquetas[indice]) celda.setAttribute('data-label', etiquetas[indice]);
     });
   },
 
@@ -482,7 +497,19 @@ const Admin = {
       ipCode.textContent = log.ip || 'sin registro';
       ipCell.appendChild(ipCode);
 
-      tr.append(timeCell, userCell, roleCell, actionCell, detailCell, ipCell);
+      tr.append(
+        this.literalCell(`#${log.id}`, 'text-dim'),
+        timeCell,
+        userCell,
+        roleCell,
+        actionCell,
+        detailCell,
+        ipCell
+      );
+      this.etiquetarCeldas(tr, [
+        'ID', 'Fecha y Hora', 'Usuario Responsable', 'Rol',
+        'Acción', 'Detalles', 'Dirección IP'
+      ]);
       tbody.appendChild(tr);
     });
   },

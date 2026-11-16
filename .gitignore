@@ -4,6 +4,7 @@ node_modules/
 keys/
 certs/
 storage/
+logs/
 *.db
 *.sqlite
 *.sqlite3

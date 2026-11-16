@@ -7,6 +7,7 @@ const App = {
   async init() {
     this.initTheme();
     this.initDateDisplay();
+    this.initMobileNav();
     this.bindGlobalEvents();
     this.bindAuthEvents();
     this.bindModalEvents();
@@ -39,6 +40,44 @@ const App = {
     icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
   },
 
+  /**
+   * Menú adaptable: en móvil y tableta las acciones del encabezado se guardan
+   * detrás del botón de hamburguesa. En escritorio el botón no se muestra.
+   */
+  initMobileNav() {
+    const toggle = document.getElementById('navToggle');
+    const actions = document.getElementById('headerActions');
+    if (!toggle || !actions) return;
+
+    const icon = document.getElementById('navToggleIcon');
+
+    const setOpen = (open) => {
+      actions.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      if (icon) icon.className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+    };
+
+    this.closeMobileNav = () => setOpen(false);
+
+    toggle.addEventListener('click', () => {
+      setOpen(!actions.classList.contains('open'));
+    });
+
+    // Al elegir una acción del menú (login, perfil, administración...) se cierra
+    // para no tapar el modal o la vista que se abre a continuación.
+    actions.addEventListener('click', (event) => {
+      if (event.target.closest('button')) setOpen(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 900) setOpen(false);
+    });
+  },
+
   initDateDisplay() {
     const el = document.getElementById('currentDateDisplay');
     if (!el) return;
@@ -50,6 +89,7 @@ const App = {
 
   switchView(viewName) {
     this.currentView = viewName;
+    if (typeof this.closeMobileNav === 'function') this.closeMobileNav();
     const viewPortal = document.getElementById('viewPortal');
     const viewAdmin = document.getElementById('viewAdmin');
     const btnNavPortal = document.getElementById('btnNavPortal');

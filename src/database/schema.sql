@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
     intentos_fallidos INTEGER DEFAULT 0,
     bloqueado_hasta DATETIME,
-    codigo_recuperacion TEXT,
+    codigo_recuperacion TEXT,     -- Hash SHA-256 del código de 6 dígitos (nunca en claro)
     codigo_expira DATETIME,
     telefono TEXT,                -- Cifrado simétrico AES-256-GCM (formato v1:iv:tag:datos)
     rfc TEXT,                     -- Cifrado simétrico AES-256-GCM (formato v1:iv:tag:datos)
@@ -48,10 +48,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
 );
 
 -- 5. Tabla de Refresh Tokens (Gestión Segura de Sesiones JWT)
+-- El token se guarda como hash SHA-256: un volcado de la base no permite
+-- reutilizar la sesión de ningún usuario.
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     id_usuario INTEGER NOT NULL,
-    token TEXT UNIQUE NOT NULL,
+    token TEXT UNIQUE NOT NULL,   -- Hash SHA-256 del refresh token
     expira_en DATETIME NOT NULL,
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     revocado INTEGER DEFAULT 0,

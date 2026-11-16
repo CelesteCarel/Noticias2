@@ -233,6 +233,18 @@ async function run() {
     return 'exige 32 bytes en hexadecimal (64 caracteres)';
   });
 
+  await test('Una DATA_ENCRYPTION_KEY débil se rechaza aunque tenga 64 caracteres', () => {
+    const r = runNode(`
+      process.env.DATA_ENCRYPTION_KEY = '0'.repeat(64);
+      ${requireServer('src/utils/crypto.js')}
+    `);
+
+    assert.notStrictEqual(r.status, 0, 'Aceptó una llave simétrica predecible');
+    assert.match(r.stderr, /demasiado débil/,
+      `Debe explicar que la llave es débil: ${r.stderr.slice(0, 200)}`);
+    return 'rechaza todo ceros, el valor de ejemplo y secuencias repetitivas';
+  });
+
   await test('Sin las llaves RSA los JWT no arrancan e indican ejecutar npm run keys', () => {
     const dbPath = tempDbPath('nokeys');
     const r = runNode(`
@@ -338,6 +350,36 @@ async function run() {
       assert.strictEqual(m[2], 'true', 'La cookie debe ser HttpOnly');
       assert.strictEqual(m[3], 'true', 'La cookie debe ser SameSite=Strict');
       return 'los tres atributos se activan al cifrar el transporte';
+    });
+
+    await test('Un segundo puerto HTTP redirige a HTTPS con 308', () => {
+      const dbPath = tempDbPath('tlsredirect');
+      const r = runNode(`
+        const http = require('http');
+        process.env.PORT = '3325';
+        process.env.HTTP_REDIRECT_PORT = '3326';
+        process.env.HTTPS_ENABLED = 'true';
+        process.env.TLS_KEY_PATH = ${JSON.stringify(path.join(CERTS_DIR, 'dev-key.pem'))};
+        process.env.TLS_CERT_PATH = ${JSON.stringify(path.join(CERTS_DIR, 'dev-cert.pem'))};
+        process.env.DB_PATH = ${JSON.stringify(dbPath)};
+        ${BASE_ENV}
+        ${requireServer('server.js')}
+        setTimeout(() => {
+          http.get('http://127.0.0.1:3326/api/health', res => {
+            console.log('REDIRECT', res.statusCode, res.headers.location || '');
+            res.resume();
+            process.exit(0);
+          }).on('error', e => { console.log('REDIRECT_ERR', e.message); process.exit(0); });
+        }, 3000);
+      `);
+      removeDb(dbPath);
+
+      const m = /REDIRECT (\d+) (\S+)/.exec(r.stdout);
+      assert.ok(m, `No hubo respuesta del puerto HTTP:\n${r.stdout}\n${r.stderr}`);
+      assert.strictEqual(m[1], '308', 'La redirección debe usar 308 para conservar el método');
+      assert.match(m[2], /^https:\/\/127\.0\.0\.1:3325\/api\/health$/,
+        `El destino debe apuntar al mismo recurso por HTTPS: ${m[2]}`);
+      return 'quien entre por http://IP:3080 termina en https://IP:3000';
     });
 
     await test('HTTPS sin certificado falla con un mensaje accionable, no con un error interno', () => {

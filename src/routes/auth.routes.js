@@ -25,11 +25,18 @@ const {
 } = require('../middleware/sanitizer');
 const emailService = require('../services/email.service');
 const { encrypt, decrypt } = require('../utils/crypto');
+const { hashSha256, hashCoincide } = require('../utils/hash');
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 const BCRYPT_SALT_ROUNDS = 12;
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+/**
+ * Mensaje único para forgot-password. Se devuelve tanto si la cuenta existe
+ * como si no: distinguirlos permitiría enumerar los correos registrados.
+ */
+const MENSAJE_RECUPERACION = 'Si el correo está registrado, recibirás un código de verificación de 6 dígitos. '
+  + 'Revisa tu bandeja de entrada o la carpeta de spam.';
 
 const MAX_DIRECCION = 200;
 const RFC_REGEX = /^[A-Z0-9]{12,13}$/;
@@ -463,54 +470,44 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
 
   try {
     const user = db.prepare('SELECT id, nombre, email FROM usuarios WHERE email = ?').get(correo);
+
+    /*
+     * Cuenta inexistente: se responde exactamente lo mismo que en el caso
+     * válido. Se calcula un hash de relleno para que el tiempo de respuesta no
+     * delate la existencia de la cuenta. No se envía correo.
+     */
     if (!user) {
-      return res.status(404).json({ error: 'No existe ninguna cuenta registrada con este correo electrónico' });
+      hashSha256(randomInt(100000, 1000000).toString());
+      return res.json({
+        message: MENSAJE_RECUPERACION,
+        modoPrueba: emailService.modoPrueba === true
+      });
     }
 
-    // Código numérico de 6 dígitos generado con fuente criptográfica
+    // Código numérico de 6 dígitos generado con fuente criptográfica. En la
+    // base solo se guarda su hash SHA-256, nunca el código en claro.
     const resetCode = randomInt(100000, 1000000).toString();
     const expireTime = new Date(Date.now() + 15 * 60000).toISOString();
 
     db.prepare('UPDATE usuarios SET codigo_recuperacion = ?, codigo_expira = ? WHERE id = ?')
-      .run(resetCode, expireTime, user.id);
+      .run(hashSha256(resetCode), expireTime, user.id);
 
-    let envio;
     try {
-      envio = await emailService.sendPasswordResetEmail(user.email, user.nombre, resetCode);
+      await emailService.sendPasswordResetEmail(user.email, user.nombre, resetCode);
+      logAudit(user.id, 'Solicitud de Recuperación de Contraseña', `Código de verificación enviado al correo ${correo}`, ip);
     } catch (emailError) {
+      /*
+       * Un fallo del transporte no debe revelar que la cuenta existe: se
+       * registra en el servidor y el cliente recibe la misma respuesta
+       * genérica que un correo inexistente.
+       */
       console.error('Error al enviar el correo electrónico:', emailError.message);
       logAudit(user.id, 'Fallo Envío Correo Recuperación', 'Error del transporte de correo', ip);
-      return res.status(500).json({
-        error: 'No se pudo enviar el correo de verificación. Inténtalo más tarde.'
-      });
-    }
-
-    logAudit(user.id, 'Solicitud de Recuperación de Contraseña', `Código de verificación enviado al correo ${correo}`, ip);
-
-    /*
-     * Sin SMTP configurado el correo no llega a ninguna bandeja real: nodemailer
-     * lo entrega a una cuenta de prueba de Ethereal. Decir "revisa tu bandeja"
-     * en ese caso sería mentir, porque el usuario se queda esperando un correo
-     * que jamás llegará. Se responde distinguiendo los dos escenarios.
-     *
-     * El enlace de vista previa solo se devuelve fuera de producción: en un
-     * despliegue real filtraría el código de recuperación de cualquier usuario.
-     */
-    if (envio.modoPrueba) {
-      return res.json({
-        message: 'El servidor está en modo de prueba: el código se entregó a una bandeja de prueba de Ethereal, '
-          + 'no a tu correo. Define SMTP_USER y SMTP_PASS en .env para que llegue a tu bandeja real. '
-          + 'Si ejecutas el servidor en tu equipo, el enlace del correo aparece en la consola.',
-        email: user.email,
-        modoPrueba: true,
-        vistaPrevia: IS_PRODUCTION ? undefined : envio.previewUrl
-      });
     }
 
     res.json({
-      message: 'Se ha enviado un código de verificación de 6 dígitos a tu correo electrónico. Revisa tu bandeja de entrada o carpeta de spam.',
-      email: user.email,
-      modoPrueba: false
+      message: MENSAJE_RECUPERACION,
+      modoPrueba: emailService.modoPrueba === true
     });
   } catch (error) {
     console.error('Error en forgot-password:', error.message);
@@ -543,12 +540,13 @@ router.post('/reset-password', authLimiter, (req, res) => {
     `).get(correo);
 
     if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      // Mismo mensaje que un código incorrecto: no se revela si el correo existe.
+      return res.status(400).json({ error: 'El código de verificación es incorrecto o ha expirado' });
     }
 
     const now = new Date();
 
-    if (!user.codigo_recuperacion || user.codigo_recuperacion !== String(resetCode).trim()) {
+    if (!user.codigo_recuperacion || !hashCoincide(String(resetCode).trim(), user.codigo_recuperacion)) {
       logAudit(user.id, 'Fallo Restablecimiento Contraseña', `Código incorrecto ingresado para ${correo}`, ip);
       return res.status(400).json({ error: 'El código de verificación es incorrecto' });
     }
